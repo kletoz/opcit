@@ -9,12 +9,14 @@ usage(char *argv0)
     printf("Usage: %s version\n", argv0);
     printf("       %s <operator> <args>\n", argv0);
     printf("\n");
-    printf("Operators:\n");
-    printf("    add X Y\n");
-    printf("    sub X Y\n");
-    printf("    div X Y\n");
-    printf("    mul X Y\n");
-    printf("    fibo X\n");
+    printf("Arithmetic operators:\n");
+    printf("    add, sub, div, mul\n");
+    printf("\n");
+    printf("Vector operators:\n");
+    printf("    addv, subv, mulv\n");
+    printf("\n");
+    printf("Other operators:\n");
+    printf("    fibo\n");
     exit(1);
 }
 
@@ -38,6 +40,8 @@ main(int argc, char *argv[])
         op_addv(argc, argv);
     else if (strcmp(argv[1], "subv") == 0 && argc == 4)
         op_subv(argc, argv);
+    else if (strcmp(argv[1], "mulv") == 0 && argc == 4)
+        op_mulv(argc, argv);
     else
         usage(argv[0]);
     

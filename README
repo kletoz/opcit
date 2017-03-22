@@ -11,6 +11,7 @@ mul X Y: Multiplica X por Y
 fibo X: Lista os primeiros X números de Fibonacci
 addv A B: Soma dois vetores e retorna o resultado
 subv A B: Subtrai o vetor A de B
+mulv A B: Produto interno de dois vetores
 
 onde:
 X e Y são inteiros 

@@ -91,6 +91,17 @@ op_vector_sub(int *x, int *y, int n)
 }
 
 void
+op_vector_mul(int *x, int *y, int n)
+{
+    int i, a = 0;
+
+    for (i = 0; i <= n; i++)
+        a += x[i] * y[i];
+        
+    printf("%d ", a);
+}
+
+void
 op_vector(int argc, char **argv, void (*op) (int *, int *, int))
 {
     int i, n1, n2, len, *x, *y;
@@ -154,4 +165,10 @@ void
 op_subv(int argc, char **argv)
 {
     op_vector(argc, argv, op_vector_sub);
+}
+
+void
+op_mulv(int argc, char **argv)
+{
+    op_vector(argc, argv, op_vector_mul);
 }

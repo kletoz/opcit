@@ -6,3 +6,4 @@ void op_mul(int, char **);
 void op_fibo(int, char **);
 void op_addv(int, char **);
 void op_subv(int, char **);
+void op_mulv(int, char **);
