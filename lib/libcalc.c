@@ -9,28 +9,12 @@ version(void)
 }
 
 void
-op_add(int x, int y)
+op_add(char *a, char *b)
 {
+    int x = atoi(a);
+    int y = atoi(b);
+
     printf("%d\n", x + y);
-}
-
-void
-op_add_cmd(int argc, char **argv)
-{
-    int x = atoi(argv[2]);
-    int y = atoi(argv[3]);
-
-    op_add(x, y);
-}
-
-void
-op_add_stdin(int argc, char **argv)
-{
-    int x, y;
-    
-    scanf("%d %d", &x, &y);
-
-    op_add(x, y);
 }
 
 void

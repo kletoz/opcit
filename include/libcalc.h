@@ -1,6 +1,5 @@
 void version(void);
-void op_add_cmd(int, char **);
-void op_add_stdin(void);
+void op_add(char *, char *);
 void op_sub(int, char **);
 void op_div(int, char **);
 void op_mul(int, char **);
