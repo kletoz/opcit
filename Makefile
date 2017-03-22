@@ -6,3 +6,6 @@ CFLAGS = -Wall
 
 calc: calc.o libcalc.o
 	$(CC) $(CFLAGS) -o $@ $^
+
+clean:
+	rm -f *.o calc
