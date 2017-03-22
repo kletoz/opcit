@@ -1,2 +1,2 @@
-calc: calc.c libcalc.c
-	gcc -o calc calc.c libcalc.c
+calc: calc.o libcalc.o
+	gcc -o calc calc.o libcalc.o
