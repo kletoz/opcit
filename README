@@ -9,3 +9,9 @@ sub X Y: Subtrai Y de X
 div X Y: Divide X por Y
 mul X Y: Multiplica X por Y
 fibo X: Lista os primeiros X números de Fibonacci
+addv A B: Soma dois vetores e retorna o resultado
+subv A B: Subtrai o vetor A de B
+
+onde:
+X e Y são inteiros 
+A e B são vetores com os elementos separados por vírgula

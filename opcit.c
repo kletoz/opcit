@@ -34,6 +34,10 @@ main(int argc, char *argv[])
         op_mul(argc, argv);
     else if (strcmp(argv[1], "fibo") == 0 && argc == 3)
         op_fibo(argc, argv);
+    else if (strcmp(argv[1], "addv") == 0 && argc == 4)
+        op_addv(argc, argv);
+    else if (strcmp(argv[1], "subv") == 0 && argc == 4)
+        op_subv(argc, argv);
     else
         usage(argv[0]);
     

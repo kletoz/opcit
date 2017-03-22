@@ -2,7 +2,7 @@ INCLUDE_DIR = ./include
 LIB_DIR = ./lib
 
 CC = gcc
-CFLAGS = -Wall -I$(INCLUDE_DIR)
+CFLAGS = -g -Wall -I$(INCLUDE_DIR)
 
 DEPS_FILES = libcalc.h
 DEPS = $(patsubst %,$(LIB_DIR)/%,$(DEPS_FILES))
