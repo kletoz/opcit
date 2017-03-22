@@ -1,0 +1,11 @@
+opcit -- Operador em C Intencionalmente Tosco
+
+Operações básicas diretamente da linha de comando. 
+
+Operadores implementados:
+
+add X Y: Soma dois números e retorna o resultado
+sub X Y: Subtrai Y de X
+div X Y: Divide X por Y
+mul X Y: Multiplica X por Y
+fibo X: Lista os primeiros X números de Fibonacci

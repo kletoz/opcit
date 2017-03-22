@@ -12,10 +12,10 @@ DEPS = $(patsubst %,$(LIB_DIR)/%,$(DEPS_FILES))
 %.o: %.c $(DEPS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-calc: calc.o $(LIB_DIR)/libcalc.o
+opcit: opcit.o $(LIB_DIR)/libcalc.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 .PHONY: clean
 
 clean:
-	rm -f *.o $(LIB_DIR)/*.o calc
+	rm -f *.o $(LIB_DIR)/*.o opcit
