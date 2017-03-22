@@ -26,8 +26,15 @@ main(int argc, char *argv[])
     if (argc < 2)
         usage(argv[0]);
 
-    if (strcmp(argv[1], "add") == 0 && argc == 4)
-        op_add(argc, argv);
+    if (strcmp(argv[1], "add") == 0)
+    {
+        if (argc == 4)
+            op_add_cmd(argc, argv);
+        else if (argc == 2)
+            op_add_stdin();
+        else
+            usage(argv[0]);
+    }
     else if (strcmp(argv[1], "sub") == 0 && argc == 4)
         op_sub(argc, argv);
     else if (strcmp(argv[1], "div") == 0 && argc == 4)
