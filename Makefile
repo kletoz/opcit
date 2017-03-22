@@ -7,5 +7,7 @@ CFLAGS = -Wall
 calc: calc.o libcalc.o
 	$(CC) $(CFLAGS) -o $@ $^
 
+.PHONY: clean
+
 clean:
 	rm -f *.o calc
