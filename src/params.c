@@ -4,7 +4,7 @@
 #include "util.h"
 
 char **
-params_split(char *text, int text_len, int *params_num)
+params_split(char *text, int text_len, char *delim, int *params_num)
 {
     char *s, *token, *copy, **params;
     int len, n;
@@ -12,7 +12,7 @@ params_split(char *text, int text_len, int *params_num)
 
     for (s = text, n = 0; /* nothing */; s = NULL)
     {
-        token = strtok(s, " \t\n");
+        token = strtok(s, delim);
 
         if (token == NULL)
             break;
@@ -73,7 +73,7 @@ params_read(int *params_num)
         input_length += slen;
     } while (!all_read);
 
-    params = params_split(input, input_length, params_num);
+    params = params_split(input, input_length, " \t\n", params_num);
 
     free(input);
 
