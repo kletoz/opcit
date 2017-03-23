@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include "params.h"
 
 void
 version(void)
@@ -174,13 +179,62 @@ op_mulv(char *a, char *b)
     op_vector(a, b, op_vector_mul);
 }
 
+void *
+shm_init(size_t size)
+{
+#define SHM_FILE_KEY ".shmkey"
+
+    key_t key;
+    FILE *filekey;
+    void *shm;
+    int id;
+
+    filekey = fopen(SHM_FILE_KEY, "a");
+    fclose(filekey);
+
+    key = ftok(SHM_FILE_KEY, 'x');
+
+    if (key == -1)
+    {
+        printf("ftok(): %s: %s\n", SHM_FILE_KEY, strerror(errno));
+        exit(1);
+    }
+
+    id = shmget(key, size, IPC_CREAT | 0660);
+
+    if (id == -1)
+    {
+        printf("shmget(): %s: %zd bytes: %s\n", SHM_FILE_KEY, size,
+               strerror(errno));
+        exit(1);
+    }
+
+    shm = shmat(id, NULL, 0);
+
+    if (shm == (void *) -1)
+    {
+        printf("shmat(): %s: %s\n", SHM_FILE_KEY, strerror(errno));
+        exit(1);
+    }
+
+    return shm;
+}
+
+struct contacts
+{
+    char name[50];
+    char email[50];
+};
+
 void
 op_load(char *filename)
 {
 #define BUFSIZE 10
 
-    char *s, *input, *line, buf[BUFSIZE];
-    int slen, lineno, input_length, input_size;
+    char *s, *input, *line, **params, buf[BUFSIZE];
+    int k, slen, lineno, input_length, input_size, params_num;
+    void *shm;
+    struct contacts *contacts;
     FILE *file = fopen(filename, "r");
 
     if (!file)
@@ -188,7 +242,11 @@ op_load(char *filename)
         printf("%s: %s\n", filename, strerror(errno));
         exit(1);
     }
-   
+
+    shm = shm_init(100 * (50 + 50));
+    contacts = (struct contacts *) shm;
+    k = 0;
+
     input_length = 0;
     input_size = 10;
     input = malloc(input_size * sizeof(*input));
@@ -242,7 +300,21 @@ op_load(char *filename)
             if (line[slen - 1] == '\n')
                 line[--slen] = '\0';
           
-            printf("%s:%d: [%s]\n", filename, lineno, line);
+            params = params_split(input, input_length, ",", &params_num);
+
+            if (params_num != 2)
+            {
+                printf("%s:%d: warning: invalid contact\n", filename, lineno);
+            }
+            else
+            {
+                strcpy(contacts[k].name, params[0]); 
+                strcpy(contacts[k].email, params[1]);
+                k++; 
+            }
+
+            printf("%s | %s\n", params[0], params[1]);
+            params_destroy(params, params_num);
         }
     }
 
@@ -252,5 +324,6 @@ op_load(char *filename)
         exit(1);
     }
 
-    fclose(file); 
+    fclose(file);
+    free(input); 
 }
