@@ -129,20 +129,20 @@ main(int argc, char *argv[])
 
     if (strcmp(argv[1], "add") == 0 && params_num == 2)
         op_add(params[0], params[1]);
-    else if (strcmp(argv[1], "sub") == 0 && argc == 4)
-        op_sub(argc, argv);
-    else if (strcmp(argv[1], "div") == 0 && argc == 4)
-        op_div(argc, argv);
-    else if (strcmp(argv[1], "mul") == 0 && argc == 4)
-        op_mul(argc, argv);
-    else if (strcmp(argv[1], "fibo") == 0 && argc == 3)
-        op_fibo(argc, argv);
-    else if (strcmp(argv[1], "addv") == 0 && argc == 4)
-        op_addv(argc, argv);
-    else if (strcmp(argv[1], "subv") == 0 && argc == 4)
-        op_subv(argc, argv);
-    else if (strcmp(argv[1], "mulv") == 0 && argc == 4)
-        op_mulv(argc, argv);
+    else if (strcmp(argv[1], "sub") == 0 && params_num == 2)
+        op_sub(params[0], params[1]);
+    else if (strcmp(argv[1], "div") == 0 && params_num == 2)
+        op_div(params[0], params[1]);
+    else if (strcmp(argv[1], "mul") == 0 && params_num == 2)
+        op_mul(params[0], params[1]);
+    else if (strcmp(argv[1], "fibo") == 0 && params_num == 1)
+        op_fibo(params[0]);
+    else if (strcmp(argv[1], "addv") == 0 && params_num == 2)
+        op_addv(params[0], params[1]);
+    else if (strcmp(argv[1], "subv") == 0 && params_num == 2)
+        op_subv(params[0], params[1]);
+    else if (strcmp(argv[1], "mulv") == 0 && params_num == 2)
+        op_mulv(params[0], params[1]);
     else
         usage(argv[0]);
   

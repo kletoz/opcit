@@ -18,28 +18,28 @@ op_add(char *a, char *b)
 }
 
 void
-op_sub(int argc, char **argv)
+op_sub(char *a, char *b)
 {
-    int x = atoi(argv[2]);
-    int y = atoi(argv[3]);
+    int x = atoi(a);
+    int y = atoi(b);
 
     printf("%d\n", x - y);
 }
 
 void
-op_div(int argc, char **argv)
+op_div(char *a, char *b)
 {
-    int x = atoi(argv[2]);
-    int y = atoi(argv[3]);
+    int x = atoi(a);
+    int y = atoi(b);
 
     printf("%d\n", x / y);
 }
 
 void
-op_mul(int argc, char **argv)
+op_mul(char *a, char *b)
 {
-    int x = atoi(argv[2]);
-    int y = atoi(argv[3]);
+    int x = atoi(a);
+    int y = atoi(b);
 
     printf("%d\n", x * y);
 }
@@ -61,9 +61,9 @@ fibonacci(int x)
 }
 
 void
-op_fibo(int argc, char **argv)
+op_fibo(char *a)
 {
-    int x = atoi(argv[2]);
+    int x = atoi(a);
 
     if (x > 0)
     {
@@ -102,19 +102,19 @@ op_vector_mul(int *x, int *y, int n)
 }
 
 void
-op_vector(int argc, char **argv, void (*op) (int *, int *, int))
+op_vector(char *a, char *b, void (*op) (int *, int *, int))
 {
     int i, n1, n2, len, *x, *y;
     char *str1, *str2, *token;
 
-    str1 = argv[2];
+    str1 = a;
     len = strlen(str1);
 
     for (i = n1 = 0; i < len; i++)
         if (str1[i] == ',')
             n1++;
 
-    str2 = argv[3];
+    str2 = b;
     len = strlen(str2);
 
     for (i = n2 = 0; i < len; i++)
@@ -130,7 +130,7 @@ op_vector(int argc, char **argv, void (*op) (int *, int *, int))
     x = malloc((n1 + 1) * sizeof(*x));
     y = malloc((n2 + 1) * sizeof(*y));
 
-    for (i = 0, str1 = argv[2]; /* nothing */; i++, str1 = NULL)
+    for (i = 0, str1 = a; /* nothing */; i++, str1 = NULL)
     {
         token = strtok(str1, ",");
         
@@ -140,7 +140,7 @@ op_vector(int argc, char **argv, void (*op) (int *, int *, int))
         x[i] = atoi(token);
     }
 
-    for (i = 0, str2 = argv[3]; /* nothing */; i++, str2 = NULL)
+    for (i = 0, str2 = b; /* nothing */; i++, str2 = NULL)
     {
         token = strtok(str2, ",");
         
@@ -156,19 +156,19 @@ op_vector(int argc, char **argv, void (*op) (int *, int *, int))
 }
 
 void
-op_addv(int argc, char **argv)
+op_addv(char *a, char *b)
 {
-    op_vector(argc, argv, op_vector_add);
+    op_vector(a, b, op_vector_add);
 }
 
 void
-op_subv(int argc, char **argv)
+op_subv(char *a, char *b)
 {
-    op_vector(argc, argv, op_vector_sub);
+    op_vector(a, b, op_vector_sub);
 }
 
 void
-op_mulv(int argc, char **argv)
+op_mulv(char *a, char *b)
 {
-    op_vector(argc, argv, op_vector_mul);
+    op_vector(a, b, op_vector_mul);
 }
