@@ -299,8 +299,8 @@ op_load(char *filename)
             
             if (line[slen - 1] == '\n')
                 line[--slen] = '\0';
-          
-            params = params_split(input, input_length, ",", &params_num);
+        
+            params = params_split(line, slen, ",", &params_num);
 
             if (params_num != 2)
             {
