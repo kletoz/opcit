@@ -60,6 +60,8 @@ main(int argc, char *argv[])
         op_mulv(params[0], params[1]);
     else if (strcmp(argv[1], "load") == 0 && params_num == 1)
         op_load(params[0]);
+    else if (strcmp(argv[1], "search") == 0 && params_num == 1)
+        op_search(params[0]);
     else
         usage(argv[0]);
   

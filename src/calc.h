@@ -8,3 +8,4 @@ void op_addv(char *, char *);
 void op_subv(char *, char *);
 void op_mulv(char *, char *);
 void op_load(char *);
+void op_search(char *);

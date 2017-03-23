@@ -180,7 +180,7 @@ op_mulv(char *a, char *b)
 }
 
 void *
-shm_init(size_t size)
+shm_init(size_t size, int flag)
 {
 #define SHM_FILE_KEY ".shmkey"
 
@@ -200,7 +200,7 @@ shm_init(size_t size)
         exit(1);
     }
 
-    id = shmget(key, size, IPC_CREAT | 0660);
+    id = shmget(key, size, flag | 0660);
 
     if (id == -1)
     {
@@ -243,7 +243,7 @@ op_load(char *filename)
         exit(1);
     }
 
-    shm = shm_init(100 * (50 + 50));
+    shm = shm_init(100 * (50 + 50), IPC_CREAT);
     contacts = (struct contacts *) shm;
     k = 0;
 
@@ -326,4 +326,24 @@ op_load(char *filename)
 
     fclose(file);
     free(input); 
+}
+
+void
+op_search(char *token)
+{
+    int i;
+    void *shm;
+    struct contacts *contacts;
+    
+    shm = shm_init(100 * (50 + 50), 0);
+    contacts = (struct contacts *) shm;
+
+    /* Imprimir todos os contantos que estão na shared memory. Como não existe
+     * nenhuma forma de saber quantos contatos estão armazenados, fazemos um
+     * loop por todos os 100 registros possíveis (que é o espaço aloca na shared
+     * memory). Imprimimos cada registro que não for vazio. */
+    if (strcmp(token, "all") == 0)
+        for (i = 0; i < 100; i++)
+            if (strlen(contacts[i].name))
+                printf("%-50s | %-50s\n", contacts[i].name, contacts[i].email);
 }
