@@ -179,6 +179,14 @@ op_mulv(char *a, char *b)
     op_vector(a, b, op_vector_mul);
 }
 
+/* Início de um segmento de shared memory System V.
+ *
+ * Existem duas bibliotecas diferentes para shared memory: System V e POSIX.
+ *
+ * Em POSIX as funções são do tipo shm_open(). -- man shm_overview
+ *
+ * System V é mais antiga e implementada em todos os sistemas, diferente de
+ * POSIX. Apesar de POSIX ser "melhor" o uso de SysV é mais comum. */ 
 void *
 shm_init(size_t size, int flag)
 {
@@ -189,9 +197,14 @@ shm_init(size_t size, int flag)
     void *shm;
     int id;
 
+    /* Cria um arquivo se não existir para ser usado como chave da shared
+     * memory. */
     filekey = fopen(SHM_FILE_KEY, "a");
     fclose(filekey);
 
+    /* Obtém um inteiro provavelmente único a partir do nome do arquivo. Apenas
+     * uma parte do inode do arquivo é usada de fato, o que pode produzir
+     * conflito, apesar de improvável. */
     key = ftok(SHM_FILE_KEY, 'x');
 
     if (key == -1)
@@ -200,6 +213,10 @@ shm_init(size_t size, int flag)
         exit(1);
     }
 
+    /* Obtém um segmento de shared memory com a chave especificada. Se o
+     * segmento não existir será criado desde que 'flag' contenha IPC_CREAT.
+     * O tamanho da shared memory é sempre definido na criação, nesse caso com
+     * 'size' bytes. */
     id = shmget(key, size, flag | 0660);
 
     if (id == -1)
@@ -209,6 +226,9 @@ shm_init(size_t size, int flag)
         exit(1);
     }
 
+    /* Retorna o ponteiro do segmento de shared memory, ou vendo de outra forma,
+     * shmat() anexa o segmento de shared memory ao endereço de memória local do
+     * processo. */
     shm = shmat(id, NULL, 0);
 
     if (shm == (void *) -1)
@@ -220,10 +240,14 @@ shm_init(size_t size, int flag)
     return shm;
 }
 
+#define CONTACTS_NUM 10
+#define CONTACTS_NAME_SIZE 50
+#define CONTACTS_EMAIL_SIZE 50
+
 struct contacts
 {
-    char name[50];
-    char email[50];
+    char name[CONTACTS_NAME_SIZE];
+    char email[CONTACTS_EMAIL_SIZE];
 };
 
 void
@@ -232,7 +256,7 @@ op_load(char *filename)
 #define BUFSIZE 10
 
     char *s, *input, *line, **params, buf[BUFSIZE];
-    int k, slen, lineno, input_length, input_size, params_num;
+    int k, *kp, slen, lineno, input_length, input_size, params_num;
     void *shm;
     struct contacts *contacts;
     FILE *file = fopen(filename, "r");
@@ -243,8 +267,9 @@ op_load(char *filename)
         exit(1);
     }
 
-    shm = shm_init(100 * (50 + 50), IPC_CREAT);
-    contacts = (struct contacts *) shm;
+    shm = shm_init(CONTACTS_NUM * sizeof(*contacts), IPC_CREAT);
+    kp = (int *) shm;
+    contacts = (struct contacts *) (shm + sizeof(*kp));
     k = 0;
 
     input_length = 0;
@@ -308,15 +333,38 @@ op_load(char *filename)
             }
             else
             {
-                strcpy(contacts[k].name, params[0]); 
-                strcpy(contacts[k].email, params[1]);
-                k++; 
+                if (k > CONTACTS_NUM)
+                {
+                    printf("%s: too many contacts, loaded only first %d\n", filename,
+                           CONTACTS_NUM);
+                    break;
+                }
+                else
+                {
+                    /* Copiar somente o número de bytes que estão disponíveis
+                     * para o campo na shared memory (struct contacts).
+                     * 
+                     * A função strncpy() não coloca o terminador \0 no final da
+                     * string de destino. strncpy() apenas copia no máximo N
+                     * bytes para o destino. Se nos primeiros N bytes da origem
+                     * existir um \0, será copiado normalmente.
+                     *
+                     * Por isso, é preciso adicionar um \0 separadamente na
+                     * string de destino. Assim, garantimos que a string de
+                     * destino é válida (termina com \0). */
+                    strncpy(contacts[k].name, params[0], CONTACTS_NAME_SIZE);
+                    contacts[k].name[CONTACTS_NAME_SIZE - 1] = '\0';
+                    strncpy(contacts[k].email, params[1], CONTACTS_EMAIL_SIZE);
+                    contacts[k].name[CONTACTS_EMAIL_SIZE - 1] = '\0';
+                    k++;
+                }
             }
 
-            printf("%s | %s\n", params[0], params[1]);
             params_destroy(params, params_num);
         }
     }
+    
+    *kp = k;
 
     if (ferror(file))
     {
@@ -325,25 +373,44 @@ op_load(char *filename)
     }
 
     fclose(file);
-    free(input); 
+    free(input);
 }
 
 void
 op_search(char *token)
 {
-    int i;
+    int i, k;
     void *shm;
     struct contacts *contacts;
     
-    shm = shm_init(100 * (50 + 50), 0);
-    contacts = (struct contacts *) shm;
+    shm = shm_init(CONTACTS_NUM * sizeof(*contacts), 0);
+  
+    /* Lê o início do segmento de shared memory como um inteiro.
+     * O ponteiro para o segmento de memório é do tipo void *, ou seja, não tem
+     * um tipo específico, é só memória.
+     *
+     * O casting ((int *) shm) converte esse ponteiro para um inteiro, dizendo,
+     * então, que o ponteiro para a shared memory é um ponteiro para inteiro.
+     * 
+     * Como temos, depois do casting, um ponteiro para inteiro, podemos ler o
+     * valor do inteiro armazenado na área de memória que esse ponteiro aponta
+     * fazendo o desreferenciamento. O operador de desreferenciamento é o '*'.
+     *
+     * Outra forma mais explícita de escrever isso seria:
+     *
+     * int *p, k;
+     *
+     * p = (int *) shm;
+     * k = *p;
+     */
+    k = *((int *) shm);
+    contacts = (struct contacts *) (shm + sizeof(k));
 
     /* Imprimir todos os contantos que estão na shared memory. Como não existe
      * nenhuma forma de saber quantos contatos estão armazenados, fazemos um
      * loop por todos os 100 registros possíveis (que é o espaço aloca na shared
      * memory). Imprimimos cada registro que não for vazio. */
     if (strcmp(token, "all") == 0)
-        for (i = 0; i < 100; i++)
-            if (strlen(contacts[i].name))
-                printf("%-50s | %-50s\n", contacts[i].name, contacts[i].email);
+        for (i = 0; i < k; i++)
+            printf("%-50s | %-50s\n", contacts[i].name, contacts[i].email);
 }

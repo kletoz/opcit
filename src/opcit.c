@@ -7,17 +7,9 @@
 void
 usage(char *argv0)
 {
-    printf("Usage: %s version\n", argv0);
-    printf("       %s <operator> <args>\n", argv0);
+    printf("Usage: %s <operator> <args>\n", argv0);
     printf("\n");
-    printf("Arithmetic operators:\n");
-    printf("    add, sub, div, mul\n");
-    printf("\n");
-    printf("Vector operators:\n");
-    printf("    addv, subv, mulv\n");
-    printf("\n");
-    printf("Other operators:\n");
-    printf("    fibo\n");
+    printf("README file has more details.\n");
     exit(1);
 }
 

@@ -1,18 +1,60 @@
 opcit -- Operador em C Intencionalmente Tosco
+=============================================
 
 Operações básicas diretamente da linha de comando. 
 
-Operadores implementados:
+Exemplos de uso
+---------------
 
-add X Y: Soma dois números e retorna o resultado
-sub X Y: Subtrai Y de X
-div X Y: Divide X por Y
-mul X Y: Multiplica X por Y
-fibo X: Lista os primeiros X números de Fibonacci
-addv A B: Soma dois vetores e retorna o resultado
-subv A B: Subtrai o vetor A de B
-mulv A B: Produto interno de dois vetores
+./opcit add 1 2
+./opcit addv 3,7 5,3
+./opcit fibo 3
+./opcit load contacts.csv
 
-onde:
-X e Y são inteiros 
-A e B são vetores com os elementos separados por vírgula
+Operações aritméticas
+---------------------
+
+    [ add sub div mul ]
+
+    Operações aritméticas básicas. Aceita como argumento dois números inteiros.
+
+Operações em vetores
+--------------------
+
+    [ addv subv mulv ]
+
+    Operações em vetores. Os vetores são representados como uma lista de
+    inteiros separados por vírgula. São aceitos dois vetores.
+
+Operadores matemáticos
+----------------------
+
+    [ fibo ]
+
+    Imprime a sequência de Fibonacci até o n-ésimo elemento. Aceita um
+    argumento, que é o números de elementos. 
+
+Operadores de shared memory
+---------------------------
+
+    [ load search ]
+
+    Operações de carga e busca em shared memory.
+    
+    load <arquivo csv>
+    ~~~~~~~~~~~~~~~~~~
+
+    Carrega os dados do arquivo CSV em shared memory. Arquivo CSV deve conter
+    duas colunas separadas por vírgula. Os campos não podem conter vírgulas 
+    (ou seja, o formato é CSV simplificado). Cada campo pode conter no máximo 49
+    caracteres.
+
+    search all
+    ~~~~~~~~~~
+
+    Imprime em tela o conteúdo da shared memory.
+
+    search <string>
+    ~~~~~~~~~~~~~~~
+
+    Busca um registro na shared memory que seja igual a <string>. 
