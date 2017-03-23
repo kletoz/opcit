@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <libutil.h>
+#include "util.h"
 
 struct list *
 list_prepend(struct list *list, void *data)

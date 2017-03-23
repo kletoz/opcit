@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <libcalc.h>
-#include <libutil.h>
+#include "calc.h"
+#include "util.h"
 
 void
 usage(char *argv0)

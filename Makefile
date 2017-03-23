@@ -1,21 +1,10 @@
-INCLUDE_DIR = ./include
-LIB_DIR = ./lib
+TOPTARGETS = all clean
 
-CC = gcc
-CFLAGS = -g -Wall -I$(INCLUDE_DIR)
+SUBDIRS = src
 
-DEPS_FILES = libcalc.h libutil.h
-DEPS = $(patsubst %,$(INCLUDE_DIR)/%,$(DEPS_FILES))
-# Alternatively:
-# DEPS = $(wildcard $(INCLUDE_DIR)/*.h)
+$(TOPTARGETS): $(SUBDIRS)
 
-%.o: %.c $(DEPS)
-	$(CC) $(CFLAGS) -c -o $@ $<
+$(SUBDIRS):
+	$(MAKE) -C $@ $(MAKECMDGOALS)
 
-opcit: opcit.o $(LIB_DIR)/libcalc.o $(LIB_DIR)/libutil.o
-	$(CC) $(CFLAGS) -o $@ $^
-
-.PHONY: clean
-
-clean:
-	rm -f *.o $(LIB_DIR)/*.o opcit
+.PHONY: $(TARGETS) $(SUBDIRS)
