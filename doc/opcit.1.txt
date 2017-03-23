@@ -1,0 +1,39 @@
+opcit(1)
+========
+:doctype: manpage
+:man source: opcit
+:man version: 1.0
+:man manual: opcit Manual
+
+NAME
+----
+opcit - Operador em C Intencionalmente Tosco
+
+SYNOPSIS
+--------
+'opcit' [--version] COMMAND [args]
+
+DESCRIPTION
+-----------
+opcit é um operador construído para aprendizado de conceitos fundamentais de C.
+
+OPTIONS
+-------
+--version::
+    Show version of 'opcit' and exit.
+
+COMMANDS
+--------
+
+add
+~~
+Add two integers.
+
+
+BUGS
+----
+Bugs and feature requests can be reported to the maintainer.
+
+AUTHORS
+-------
+Written by Kleto Zan <mailto:kletozan@br.ibm.com[]>
