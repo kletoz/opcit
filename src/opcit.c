@@ -88,7 +88,6 @@ params_read(int *params_num)
         }
 
         strcpy(input + input_length, buf);
-
         input_length += slen;
     } while (!all_read);
 
@@ -143,6 +142,8 @@ main(int argc, char *argv[])
         op_subv(params[0], params[1]);
     else if (strcmp(argv[1], "mulv") == 0 && params_num == 2)
         op_mulv(params[0], params[1]);
+    else if (strcmp(argv[1], "load") == 0 && params_num == 1)
+        op_load(params[0]);
     else
         usage(argv[0]);
   
