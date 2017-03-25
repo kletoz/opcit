@@ -57,4 +57,4 @@ Operadores de shared memory
     search <string>
     ~~~~~~~~~~~~~~~
 
-    Busca um registro na shared memory que seja igual a <string>. 
+    Busca um registro na shared memory. 

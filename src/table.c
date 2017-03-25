@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <regex.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -437,6 +438,38 @@ table_load(char *filename)
     free(input);
 }
 
+static void
+table_regex_search(char *token, struct contacts *contacts, int contacts_num)
+{
+    int i, retval, name, email;
+    size_t errbuf_size;
+    char *errbuf;
+    regex_t preg;
+
+    retval = regcomp(&preg, token, REG_EXTENDED | REG_ICASE);
+    
+    if (retval != 0)
+    {
+        errbuf_size = regerror(retval, &preg, NULL, 0);
+        errbuf = malloc(errbuf_size * sizeof(*errbuf));
+        regerror(retval, &preg, errbuf, errbuf_size);
+        printf("`%s': %s\n", token, errbuf);
+        free(errbuf);
+        exit(1);
+    }
+
+    for (i = 0; i < contacts_num; i++)
+    {
+        name = regexec(&preg, contacts[i].name, 0, NULL, 0);
+        email = regexec(&preg, contacts[i].email, 0, NULL, 0);
+
+        if (name == 0 || email == 0)
+            printf("%-50s | %-50s\n", contacts[i].name, contacts[i].email);
+    }
+
+    regfree(&preg);
+}
+
 void
 table_search(char *token)
 {
@@ -477,6 +510,8 @@ table_search(char *token)
     if (strcmp(token, "all") == 0)
         for (i = 0; i < k; i++)
             printf("%-50s | %-50s\n", contacts[i].name, contacts[i].email);
+    else
+        table_regex_search(token, contacts, k);
     
     table_read_unlock(sem);
 }
