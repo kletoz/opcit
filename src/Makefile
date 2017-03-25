@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -g -Wall
 
-DEPS = calc.h util.h params.h
-OBJS = calc.o util.o params.c
+DEPS = calc.h util.h params.h table.h
+OBJS = calc.o util.o params.c table.c
 
 opcit: $(OBJS) opcit.o
 	$(CC) $(CFLAGS) -o $@ $^
