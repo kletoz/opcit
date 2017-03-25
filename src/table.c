@@ -9,6 +9,23 @@
 #include "params.h"
 
 #define SHM_FILE_KEY ".shmkey"
+#define SEM_NUM 2
+
+enum sem
+{
+    SEM_READER,
+    SEM_WRITER
+};
+
+#define CONTACTS_NUM 10
+#define CONTACTS_NAME_SIZE 50
+#define CONTACTS_EMAIL_SIZE 50
+
+struct contacts
+{
+    char name[CONTACTS_NAME_SIZE];
+    char email[CONTACTS_EMAIL_SIZE];
+};
 
 /* Início de um segmento de shared memory System V.
  *
@@ -18,7 +35,7 @@
  *
  * System V é mais antiga e implementada em todos os sistemas, diferente de
  * POSIX. Apesar de POSIX ser "melhor" o uso de SysV é mais comum. */ 
-void *
+static void *
 shm_init(size_t size, int flag)
 {
     key_t key;
@@ -69,14 +86,6 @@ shm_init(size_t size, int flag)
     return shm;
 }
 
-#define SEM_NUM 2
-
-enum sem
-{
-    SEM_READER,
-    SEM_WRITER
-};
-
 /* Início de um conjunto de semáforos.
  *
  * Os semafóros são usados para o controle de acesso a shared memory.
@@ -101,7 +110,7 @@ enum sem
  *
  * São criados dois semáforos: uma para controlar a escrita e outro a leitura.
  * Os dois semáforos estão no mesmo segmento. */
-int
+static int
 sem_init(int role)
 {
     int i, id, flag, already_exists;
@@ -175,7 +184,7 @@ sem_init(int role)
     return id;
 }
 
-void
+static void
 table_write_lock(int semid)
 {
     struct sembuf ops[3];
@@ -220,7 +229,7 @@ table_write_lock(int semid)
     }
 }
 
-void
+static void
 table_write_unlock(int semid)
 {
     struct sembuf ops[1];
@@ -244,7 +253,7 @@ table_write_unlock(int semid)
     }
 }
 
-void
+static void
 table_read_lock(int semid)
 {
     struct sembuf ops[2];
@@ -277,7 +286,7 @@ table_read_lock(int semid)
     }
 }
 
-void
+static void
 table_read_unlock(int semid)
 {
     struct sembuf ops[1];
@@ -295,16 +304,6 @@ table_read_unlock(int semid)
         exit(1);
     }
 }
-
-#define CONTACTS_NUM 10
-#define CONTACTS_NAME_SIZE 50
-#define CONTACTS_EMAIL_SIZE 50
-
-struct contacts
-{
-    char name[CONTACTS_NAME_SIZE];
-    char email[CONTACTS_EMAIL_SIZE];
-};
 
 void
 table_load(char *filename)
