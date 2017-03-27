@@ -37,6 +37,8 @@ cmd_exec(char *cmd, char **params, int params_num)
         op_file(params[0]);
     else if (strcmp(cmd, "lines") == 0 && params_num == 1)
         op_lines(params[0]);
+    else if (strcmp(cmd, "pillow") == 0 && params_num == 1)
+        op_pillow(params[0]);
     else
         retval = 1;
     
@@ -406,4 +408,137 @@ op_lines(char *filename)
     fclose(file);
 
     printf("%d\n", lines);
+}
+
+/* Lista de personagens de Breaking Bed que fazem parte da cena Talking Pillow.
+ *
+ * Esse tipo de definição de um vetor de strings só é possível quando a
+ * definição acontece ao mesmo tempo que a declaração. Se a declaração foi feita
+ * primeiro e depois a definição, não compila.
+ *
+ * As chaves são usadas para atribuir valores para um vetor quando a definição é
+ * feita ao mesmo tempo que a declaração. Funciona também para outros tipos:
+ *
+ * int a[3] = { 0, 1, 2 };
+ *
+ * O tamanho do vetor pode ser omitido nesses casos:
+ *
+ * int a[] = { 0, 1, 2 };
+ *
+ *
+ * Exemplo de como NÃO FUNCIONA:
+ *
+ * char *characters[];
+ * characters[0] = "adsada"; 
+ */
+char *characters[] = {
+    "Walter White",
+    "Skyler White",
+    "Hank Schrader",
+    "Marie Schrader",
+    "Walter White, Jr."
+};
+
+/* Mutex para o controle de um conversa entre as threads. A thread que tiver o
+ * lock deste mutex (ou tiver o travesseiro, se quiser pensar assim), pode
+ * escrever no terminal o seu nome e um identificador. O identificador é dado
+ * pelo processo-pai que cria as threads sequencialmente. */
+pthread_mutex_t pillow;
+
+/* Função executada por cada thread criada pelo processo-pai, através da função
+ * op_pillow().
+ *
+ * Cada thread vai fazer uma impressão simples na tela, com um nome e um ID.
+ *
+ * O nome é obtido de uma lista de nomes (um vetor de ponteiros para strings, ou
+ * ainda um ponteiro para ponteiros de char) definada estaticamente logo acima,
+ * em characters.
+ */
+void *
+pillow_talking(void *s)
+{
+    /* Esta pode ser uma operação complicada de se ler em C. Vamos quebra-la em
+     * partes.
+     *
+     * Primeiro a conversão por casting. O argumento desta função é um void *. O
+     * que significa que é um ponteiro apontando para uma área da memória de
+     * tipo desconhecido. Ou seja, é um ponteiro para bytes, que não informamos
+     * ao compilador de que tipo, se inteiros, ponto flutuando ou characteres.
+     *
+     * Mas como nós que fizemos a chamada a esta função através de
+     * pthread_create(), nós sabemos que o último argumento que passamos foi um
+     * inteiro. Lembrando que o último argumento passado para pthread_create() é
+     * um ponteiro que será o argumento desta função aqui, a "função da thread".
+     *
+     * Então, podemos converter o ponteiro da área de memória de tipo
+     * desconhecido para um ponteiro para uma área de memória de inteiro:
+     *
+     *     (int *) s
+     *
+     * Essa conversão por casting retorna um ponteiro para inteiro. Poderiamos
+     * dar um nome para esse ponteiro, inclusive:
+     *
+     *     int *p = (int *) s;
+     *
+     * Dessa forma, conseguimos fazer operações no ponteiro p.
+     *
+     * A segunda parte da expressão é usada para obter o valor da área de
+     * memória para onde o ponteiro s (ou neste texto o novo p) aponta. 
+     *
+     * A operação unária '*' antes de um ponteiro retorna o valor da área de
+     * memória para onde o ponteiro aponta.
+     *
+     * Usamos, então, esse operador para obter o valor do ponteiro '(int *) s'.
+     * Os parêntes são usados para garantir a precedência que queremos. O
+     * ponteiro que queremos é o ((int *) s). Mas como queremos o valor para
+     * onde aponta, usando o operador '*' no início, chegando em
+     *
+     *    *((int *) s)
+     */
+    int k = *((int *) s);
+    int i = k % 5;
+
+    pthread_mutex_lock(&pillow);
+
+    printf("(%d) %s: Alright, I've got the talking pillow now... Okay?\n", k, characters[i]);
+
+    pthread_mutex_unlock(&pillow);
+
+    free(s);
+
+    return NULL;
+}
+
+void
+op_pillow(char *a)
+{
+    int i, *k, n;
+    pthread_t *threads;
+
+    n = atoi(a);
+
+    pthread_mutex_init(&pillow, NULL);
+    threads = malloc(n * sizeof(*threads));
+
+    for (i = 0; i < n; i++)
+    {
+        /* Precisamos criar uma área de memória diferente para cada thread. Como
+         * passamos um ponteiro para uma área de memória em pthread_create(),
+         * não podemos passar o endereço da variável i, pois essa variável será
+         * alterada a cada iteração do loop.
+         *
+         * Criamos então uma nova área de memória e passamos o valor de i para a
+         * área de memória. O ponteiro para esta nova área de memória, por sua
+         * vez, é passado para a função pthread_create(). */
+        k = malloc(sizeof(int));
+        *k = i;
+        pthread_create(&threads[i], NULL, pillow_talking, k);
+    }
+
+    for (i = 0; i < n; i++)
+        pthread_join(threads[i], NULL);
+
+    pthread_mutex_destroy(&pillow);
+
+    free(threads);
 }

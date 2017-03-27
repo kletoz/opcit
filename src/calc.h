@@ -12,3 +12,4 @@ void op_load(char *);
 void op_search(char *);
 void op_file(char *);
 void op_lines(char *);
+void op_pillow(char *);
