@@ -54,6 +54,8 @@ main(int argc, char *argv[])
         op_load(params[0]);
     else if (strcmp(argv[1], "search") == 0 && params_num == 1)
         op_search(params[0]);
+    else if (strcmp(argv[1], "file") == 0 && params_num == 1)
+        op_file(params[0]);
     else
         usage(argv[0]);
   

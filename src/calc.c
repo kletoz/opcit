@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "table.h"
 
 void
@@ -184,4 +185,73 @@ void
 op_search(char *token)
 {
     table_search(token);
+}
+
+int
+readline(char **buf, int *bufsize, FILE *file)
+{
+    int slen, buflen;
+    char *s;
+
+    if (*buf == NULL)
+    {
+        *bufsize = 2;
+        *buf = malloc(*bufsize * sizeof(*buf));
+    }
+
+    buflen = slen = 0;
+
+    while ((s = fgets(*buf + buflen, *bufsize - buflen, file)))
+    {
+        if (s == NULL)
+            break;
+
+        slen = strlen(s);
+        buflen += slen;
+
+        if (s[slen - 1] == '\n')
+        {
+            break;
+        }
+        else
+        {
+            *bufsize += slen + 1;
+            *buf = realloc(*buf, *bufsize * sizeof(*buf));
+        }
+    }
+
+    return slen;
+}
+
+void
+op_file(char *filename)
+{
+    char *buf;
+    int len, bufsize;
+    FILE *file;
+    
+    file = fopen(filename, "r");
+    
+    if (!file)
+    {
+        printf("%s: %s\n", filename, strerror(errno));
+        exit(1);
+    }
+
+    buf = NULL;
+
+    while ((len = readline(&buf, &bufsize, file)))
+    {
+        printf(">>>[%s]\n", buf);
+    }
+
+    free(buf);
+
+    if (ferror(file))
+    {
+        printf("%s: %s\n", filename, strerror(errno));
+        exit(1);
+    }
+
+    fclose(file);
 }
