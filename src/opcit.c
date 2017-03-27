@@ -34,30 +34,8 @@ main(int argc, char *argv[])
         params_in_argv = 1;
     }
 
-    if (strcmp(argv[1], "add") == 0 && params_num == 2)
-        op_add(params[0], params[1]);
-    else if (strcmp(argv[1], "sub") == 0 && params_num == 2)
-        op_sub(params[0], params[1]);
-    else if (strcmp(argv[1], "div") == 0 && params_num == 2)
-        op_div(params[0], params[1]);
-    else if (strcmp(argv[1], "mul") == 0 && params_num == 2)
-        op_mul(params[0], params[1]);
-    else if (strcmp(argv[1], "fibo") == 0 && params_num == 1)
-        op_fibo(params[0]);
-    else if (strcmp(argv[1], "addv") == 0 && params_num == 2)
-        op_addv(params[0], params[1]);
-    else if (strcmp(argv[1], "subv") == 0 && params_num == 2)
-        op_subv(params[0], params[1]);
-    else if (strcmp(argv[1], "mulv") == 0 && params_num == 2)
-        op_mulv(params[0], params[1]);
-    else if (strcmp(argv[1], "load") == 0 && params_num == 1)
-        op_load(params[0]);
-    else if (strcmp(argv[1], "search") == 0 && params_num == 1)
-        op_search(params[0]);
-    else if (strcmp(argv[1], "file") == 0 && params_num == 1)
-        op_file(params[0]);
-    else
-        usage(argv[0]);
+    if (cmd_exec(argv[1], params, params_num))
+        usage(argv[1]);
   
     if (!params_in_argv)
     {

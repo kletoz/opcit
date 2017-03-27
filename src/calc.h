@@ -1,3 +1,4 @@
+int cmd_exec(char *, char **, int);
 void version(void);
 void op_add(char *, char *);
 void op_sub(char *, char *);

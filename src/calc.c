@@ -3,6 +3,42 @@
 #include <string.h>
 #include <errno.h>
 #include "table.h"
+#include "util.h"
+#include "calc.h"
+#include "params.h"
+
+int
+cmd_exec(char *cmd, char **params, int params_num)
+{
+    int retval = 0;
+
+    if (strcmp(cmd, "add") == 0 && params_num == 2)
+        op_add(params[0], params[1]);
+    else if (strcmp(cmd, "sub") == 0 && params_num == 2)
+        op_sub(params[0], params[1]);
+    else if (strcmp(cmd, "div") == 0 && params_num == 2)
+        op_div(params[0], params[1]);
+    else if (strcmp(cmd, "mul") == 0 && params_num == 2)
+        op_mul(params[0], params[1]);
+    else if (strcmp(cmd, "fibo") == 0 && params_num == 1)
+        op_fibo(params[0]);
+    else if (strcmp(cmd, "addv") == 0 && params_num == 2)
+        op_addv(params[0], params[1]);
+    else if (strcmp(cmd, "subv") == 0 && params_num == 2)
+        op_subv(params[0], params[1]);
+    else if (strcmp(cmd, "mulv") == 0 && params_num == 2)
+        op_mulv(params[0], params[1]);
+    else if (strcmp(cmd, "load") == 0 && params_num == 1)
+        op_load(params[0]);
+    else if (strcmp(cmd, "search") == 0 && params_num == 1)
+        op_search(params[0]);
+    else if (strcmp(cmd, "file") == 0 && params_num == 1)
+        op_file(params[0]);
+    else
+        retval = 1;
+    
+    return retval;
+}
 
 void
 version(void)
@@ -227,8 +263,9 @@ void
 op_file(char *filename)
 {
     char *buf;
-    int len, bufsize;
+    int len, bufsize, params_num;
     FILE *file;
+    char **params;
     
     file = fopen(filename, "r");
     
@@ -242,7 +279,13 @@ op_file(char *filename)
 
     while ((len = readline(&buf, &bufsize, file)))
     {
-        printf(">>>[%s]\n", buf);
+        printf("> %s", buf);
+        
+        params = params_split(buf, len, " \t\n", &params_num);
+
+        cmd_exec(params[0], params + 1, params_num - 1);
+
+        params_destroy(params, params_num);
     }
 
     free(buf);

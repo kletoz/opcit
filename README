@@ -57,4 +57,17 @@ Operadores de shared memory
     search <string>
     ~~~~~~~~~~~~~~~
 
-    Busca um registro na shared memory. 
+    Busca um registro na shared memory.
+
+Operadores de arquivos
+----------------------
+
+    [ file ]
+
+    Operações em arquivos.
+
+    file <arquivo>
+    ~~~~~~~~~~~~~~
+
+    Executa os comandos listados no <arquivo>. Cada linha é um comando
+    diferente.
