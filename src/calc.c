@@ -35,6 +35,8 @@ cmd_exec(char *cmd, char **params, int params_num)
         op_search(params[0]);
     else if (strcmp(cmd, "file") == 0 && params_num == 1)
         op_file(params[0]);
+    else if (strcmp(cmd, "lines") == 0 && params_num == 1)
+        op_lines(params[0]);
     else
         retval = 1;
     
@@ -348,4 +350,31 @@ op_file(char *filename)
     }
 
     fclose(file);
+}
+
+void
+op_lines(char *filename)
+{
+    FILE *file;
+    int lines;
+
+    file = fopen(filename, "r");
+
+    if (!file)
+    {
+        printf("%s: %s\n", filename, strerror(errno));
+        exit(1);
+    }
+
+    lines = lines_count(file);
+
+    if (lines < 0)
+    {
+        printf("%s: %s\n", filename, strerror(errno));
+        exit(1);
+    }
+
+    fclose(file);
+
+    printf("%d\n", lines);
 }

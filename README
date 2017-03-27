@@ -62,7 +62,7 @@ Operadores de shared memory
 Operadores de arquivos
 ----------------------
 
-    [ file ]
+    [ file lines ]
 
     Operações em arquivos.
 
@@ -71,3 +71,8 @@ Operadores de arquivos
 
     Executa os comandos listados no <arquivo>. Cada linha é um comando
     diferente.
+
+    lines <arquivo>
+    ~~~~~~~~~~~~~~~
+
+    Conta o número de linhas do arquivo.
