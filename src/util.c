@@ -34,7 +34,7 @@ lines_count(FILE *file)
 #define BUFSIZE 10
 
     int len, lines;
-    char *s, buf[BUFSIZE];
+    char *s, *end, buf[BUFSIZE];
 
     lines = 0;
 
@@ -46,6 +46,9 @@ lines_count(FILE *file)
          * após o último byte lido da stream será colocado um \0. Por isso
          * podemos usar a função de string strlen(). */
         len = strlen(buf);
+
+        /* Ponteiro para o final da string do buffer (o '\0'). */
+        end = s + len;
 
         /* Conta o número de caracteres de quebra de linha que existe no buffer
          * `buf'. Inicialmente `s' aponta para o início de `buf' (retornado
@@ -74,21 +77,31 @@ lines_count(FILE *file)
          *
          * Após a primeira chamada a fgets(), o buf estará preenchido assim:
          *
-         *       s
-         *       |
-         *       V
+         *       s                                   end
+         *       |                                   |
+         *       V                                   V
          *     +---+---+---+---+---+---+---+---+---+---+
          * buf:| l | i | n | e |   | 1 |\n | l | n |\0 | 
          *     +---+---+---+---+---+---+---+---+---+---+
          *       0   1   2   3   4   5   6   7   8   9
          *
-         * com s apontando para o início de buf. A primeira chamada a função
-         * memchr() receberá s apontando para o início de buf e retornará um
-         * novo ponteiro s' para o primeiro caractere '\n':
+         * com s apontando para o início de buf e end para o final da string.
+         * Neste caso o final da string é o mesmo do buffer, mas não é
+         * obrigatório que seja assim. Se houvesse, por exemplo, apenas a
+         * primeira linha no arquivo ("line 1"), o '\0' estarai no índice 7 do
+         * buffer. O fgets() que adiciona o '\0' após o '\n' ou no final do
+         * buffer.
          *
-         *       s                       s'
-         *       |                       |
-         *       V                       V
+         * A primeira chamada a função memchr() receberá s apontando para o
+         * início de buf e retornará um novo ponteiro s' para o primeiro
+         * caractere '\n'. O terceiro parâmetro da função memchr() é o número de
+         * bytes que devem ser lidos. Estamos usando aritmética de ponteiros
+         * para descobrir o tamanho do que deve ser passado. Na primeira
+         * chamada, a subtração `end - s' tem exatamente o mesmo valor de `len'.
+         *
+         *       s                       s'          end
+         *       |                       |           |
+         *       V                       V           V
          *     +---+---+---+---+---+---+---+---+---+---+
          * buf:| l | i | n | e |   | 1 |\n | l | n |\0 | 
          *     +---+---+---+---+---+---+---+---+---+---+
@@ -97,22 +110,33 @@ lines_count(FILE *file)
          * O retorno de memchr() que estamos chamando de s' será atribuído ao
          * próprio s e teremos então, após a execução de memchr() o seguintes:
          *
-         *                               s
-         *                               |
-         *                               V
+         *                               s           end
+         *                               |           |
+         *                               V           V
          *     +---+---+---+---+---+---+---+---+---+---+
          * buf:| l | i | n | e |   | 1 |\n | l | n |\0 | 
          *     +---+---+---+---+---+---+---+---+---+---+
          *       0   1   2   3   4   5   6   7   8   9
          *
          * Incrementamos o contador lines e avançamos o ponteiro s um byte
-         * (s++). Agora, s aponta para a posição 7 de buf. A próxima chamada de
+         * (usando s++):
+         *
+         *                                   s       end
+         *                                   |       |
+         *                                   V       V
+         *     +---+---+---+---+---+---+---+---+---+---+
+         * buf:| l | i | n | e |   | 1 |\n | l | n |\0 | 
+         *     +---+---+---+---+---+---+---+---+---+---+
+         *       0   1   2   3   4   5   6   7   8   9
+         *
+         * Agora s aponta para a posição 7 de buf. A próxima chamada de
          * memchr() no while receberá, então, o restante do buf (posições 7, 8 e
-         * 9).
+         * 9). O tamanho do que falta ser lido é calculado pela aritimética de
+         * ponteiros `end - s'.
          *
          * A segunda chamada a memchr() no loop não econtrará nenhum '\n' e
          * retornará NULL. Nessa segunda chamada o loop memchr() acaba. */
-        while ((s = memchr(s, '\n', len)))
+        while ((s = memchr(s, '\n', end - s)))
         {
             lines++;
             s++;
