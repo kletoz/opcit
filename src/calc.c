@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <pthread.h>
 #include "table.h"
 #include "util.h"
 #include "calc.h"
@@ -259,6 +260,26 @@ readline(char **buf, int *bufsize, FILE *file)
     return slen;
 }
 
+struct cmd
+{
+    char **params;
+    int params_num;
+};
+
+void *
+job_cmd_exec(void *p)
+{
+    /* Desreferenciando uma área de memória passada pela função
+     * pthread_create(). Sabemos que essa área de memória é do tipo struct cmd,
+     * porque definimos assim na função op_file. Então, podemos criar um
+     * ponteiro local que aponta para a área de memória p. */
+    struct cmd *cmd = (struct cmd *) p;
+
+    cmd_exec(cmd->params[0], cmd->params + 1, cmd->params_num - 1);
+
+    return 0;
+}
+
 void
 op_file(char *filename)
 {
@@ -266,7 +287,9 @@ op_file(char *filename)
     int len, bufsize, params_num;
     FILE *file;
     char **params;
-    
+    struct cmd cmd;
+    pthread_t thread;
+
     file = fopen(filename, "r");
     
     if (!file)
@@ -283,7 +306,35 @@ op_file(char *filename)
         
         params = params_split(buf, len, " \t\n", &params_num);
 
-        cmd_exec(params[0], params + 1, params_num - 1);
+        cmd.params = params;
+        cmd.params_num = params_num;
+
+        /* Cria um thread que vai executar a função job_cmd_exec. Nessa chamada,
+         * job_cmd_exec é uma função definda com o protótipo
+         *
+         * void * (*job_cmd_exec) (void *)
+         *
+         * seguindo a especificação da biblioteca POSIX threads.
+         *
+         * O último parâmetro de pthread_create() é um ponteiro para void, ou
+         * seja, um ponteiro para uma área de memória de qualquer tipo.
+         *
+         * Esse ponteiro será passado para a função job_cmd_exec(). Essa é a
+         * forma de se passar argumento para a função executada na thread.
+         *
+         * Dentro da função da thread job_cmd_exec() é preciso desreferenciar
+         * essa área de memória com o tipo de dados conhecidos. Neste caso
+         * estamos passando um ponteiro para uma área de memória que contém uma
+         * estrutura de dados struct cmd, com duas variáveis: params e num. */
+        pthread_create(&thread, NULL, job_cmd_exec, &cmd);
+
+        /* Esperar até a thread terminar de executar o comando e depois
+         * continuar a execução do programa principal.
+         * 
+         * Essa implementação é notadamente inútil, pois se vamos chamar a
+         * thread e aguadar simplesmente, poderíamos ter feito a execução do
+         * comando aqui, diretamente. */
+        pthread_join(thread, NULL);
 
         params_destroy(params, params_num);
     }

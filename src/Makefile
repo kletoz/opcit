@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -lpthread
 
 DEPS = calc.h util.h params.h table.h
 OBJS = calc.o util.o params.c table.c
