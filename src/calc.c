@@ -262,22 +262,24 @@ readline(char **buf, int *bufsize, FILE *file)
     return slen;
 }
 
-struct cmd
-{
-    char **params;
-    int params_num;
-};
-
 void *
 job_cmd_exec(void *p)
 {
-    /* Desreferenciando uma área de memória passada pela função
-     * pthread_create(). Sabemos que essa área de memória é do tipo struct cmd,
-     * porque definimos assim na função op_file. Então, podemos criar um
-     * ponteiro local que aponta para a área de memória p. */
-    struct cmd *cmd = (struct cmd *) p;
+    int len, params_num;
+    char **params;
+    char *buf = (char *) p;
 
-    cmd_exec(cmd->params[0], cmd->params + 1, cmd->params_num - 1);
+    printf("> %s", buf);
+        
+    len = strlen(buf);
+        
+    params = params_split(buf, len, " \t\n", &params_num);
+
+    cmd_exec(params[0], params + 1, params_num - 1);
+        
+    params_destroy(params, params_num);
+
+    free(p);
 
     return 0;
 }
@@ -285,12 +287,10 @@ job_cmd_exec(void *p)
 void
 op_file(char *filename)
 {
-    char *buf;
-    int len, bufsize, params_num;
+    char *buf, *copy;
+    int len, k, lines, threads_index, bufsize;
     FILE *file;
-    char **params;
-    struct cmd cmd;
-    pthread_t thread;
+    pthread_t *threads;
 
     file = fopen(filename, "r");
     
@@ -300,16 +300,38 @@ op_file(char *filename)
         exit(1);
     }
 
+    lines = lines_count(file);
+
+    if (lines < 0)
+    {
+        printf("%s: %s\n", filename, strerror(errno));
+        exit(1);
+    }
+
+    /* A função lines_count() lê o arquivo completo e por isso o ponteiro do arquivo
+     * depois da chamada está no final. Qualquer função que tentar ler esse
+     * arquivo receberá EOF.
+     *
+     * A função fseek() da biblioteca padrão posiciona o ponteiro de leitura do
+     * arquivo em algum ponto, definido pelos argumentos.
+     *
+     * Neste caso, estamos posicionando em 0 (segundo argumento) contando a
+     * partir do início (SEEK_SET). Também é possível contar a partir do final
+     * usando SEEK_END ou a partir da posição atual usandando SEEK_CUR. */
+    fseek(file, 0, SEEK_SET);
+
+    /* Para cada linha do arquivo será criada uma thread. Cada linha (ou
+     * comando) é enviado a uma thread diferente. Por isso, precisamos de um
+     * vetor de threads. */
+    threads = malloc(lines * sizeof(*threads));
+    threads_index = 0;
+
     buf = NULL;
 
     while ((len = readline(&buf, &bufsize, file)))
     {
-        printf("> %s", buf);
-        
-        params = params_split(buf, len, " \t\n", &params_num);
-
-        cmd.params = params;
-        cmd.params_num = params_num;
+        if (len == 0)
+            continue;
 
         /* Cria um thread que vai executar a função job_cmd_exec. Nessa chamada,
          * job_cmd_exec é uma função definda com o protótipo
@@ -324,21 +346,24 @@ op_file(char *filename)
          * Esse ponteiro será passado para a função job_cmd_exec(). Essa é a
          * forma de se passar argumento para a função executada na thread.
          *
-         * Dentro da função da thread job_cmd_exec() é preciso desreferenciar
-         * essa área de memória com o tipo de dados conhecidos. Neste caso
-         * estamos passando um ponteiro para uma área de memória que contém uma
-         * estrutura de dados struct cmd, com duas variáveis: params e num. */
-        pthread_create(&thread, NULL, job_cmd_exec, &cmd);
-
-        /* Esperar até a thread terminar de executar o comando e depois
-         * continuar a execução do programa principal.
-         * 
-         * Essa implementação é notadamente inútil, pois se vamos chamar a
-         * thread e aguadar simplesmente, poderíamos ter feito a execução do
-         * comando aqui, diretamente. */
-        pthread_join(thread, NULL);
-
-        params_destroy(params, params_num);
+         * Nessa implementação, vamos passar a linha completa lida para a thread
+         * e o split em parâmetros será feito dentro de job_cmd_exec().
+         *
+         * Não podemos passar, porém, o ponteiro `buf' diretamente para a
+         * thread. Este ponteiro aponta para uma área da memória criada pela
+         * função readline(). Se a thread receber o mesmo ponteiro, o valor
+         * dentro dessa área de memória será alterado pela nova chamada a
+         * realine().
+         *
+         * Por isso, precismaos fazer uma cópia, para outra área de memória, do
+         * conteúdo de `buf' antes de passar para job_cmd_exec().
+         *
+         * A função strdup() da biblioteca padrão cria uma nova área de memória
+         * com uma cópia do conteúdo da string e retorna um ponteiro para essa
+         * área de memória. */
+        k = threads_index++;
+        copy = strdup(buf);
+        pthread_create(&threads[k], NULL, job_cmd_exec, copy);
     }
 
     free(buf);
@@ -350,6 +375,10 @@ op_file(char *filename)
     }
 
     fclose(file);
+
+    /* Aguardar todas as threads para continuar a execução. */
+    for (k = 0; k < threads_index; k++)
+        pthread_join(threads[k], NULL);
 }
 
 void
