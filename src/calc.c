@@ -46,6 +46,8 @@ cmd_exec(char *cmd, char **params, int params_num)
         op_pillow(params[0]);
     else if (strcmp(cmd, "server") == 0 && params_num == 1)
         op_server(params[0]);
+    else if (strcmp(cmd, "client") == 0 && params_num == 2)
+        op_client(params[0], params[1]);
     else
         retval = 1;
     
@@ -649,8 +651,79 @@ op_server(char *a)
         /* Escreve a string no file descriptor da conexão estabelecida. Reparem
          * que o file descriptor usado é connfd e não listenfd. */
         write(connfd, buf, len);
+        printf("client %d: %s", connfd, buf);
 
         /* Fecha a conexão unilateralmente, derrubando a conexão. */
         close(connfd);
     }
+}
+
+void
+op_client(char *host, char *b)
+{
+    int port, len, sockfd, bufsize;
+    struct sockaddr_in server;
+    time_t now;
+    FILE *stream;
+    char *buf;
+
+    /* Cria o socket. */
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    if (sockfd == -1)
+    {
+        printf("socket(): %s:%d: %s\n", host, port, strerror(errno));
+        exit(1);
+    }
+
+    port = atoi(b);
+
+    /* Inicia a estrutura de informações com o domínio AF_INET (que é IPv4) e a
+     * porta. Todos os outros elementos da estrutura devem ser 0 ou NULL (em
+     * caso de ponteiros). Isso é feito de uma única vez com a função memset(),
+     * que define como zero os N bytes da área de memória que começam em no byte
+     * para onde *server aponta.
+     *
+     * `N' é o tamanho em bytes da estrutura struct sockaddr_in, calculado com
+     * sizeof().
+     *
+     * Reparem que o memset é feito com 0 e não '0'. O primeiro, 0, é
+     * representado como todos os bits zerados de um byte qualquer (seja ele
+     * byte de inteiro, char, ponteiro). O segundo, '0', é uma representação
+     * ascii e vale 48 (cf. man ascii). */
+    memset(&server, 0, sizeof(server)); 
+    server.sin_family = AF_INET;
+    server.sin_port = htons(port);
+   
+    /* Salva em sin_addr o IP passado por linha de comando (variável b) usando o
+     * tipo IPv4 (AF_INET). Essa funçõa converte o IP de "printable" para
+     * "network", ou pton. */ 
+    if (inet_pton(AF_INET, b, &server.sin_addr) < 0)
+    {
+        printf("inet_pton(): %s: %s\n", host, strerror(errno));
+        exit(1);
+    }
+
+    /* Conecta o socket sockfd ao servidor definido na estrutura `server'. */
+    if (connect(sockfd, (struct sockaddr *) &server, sizeof(server)) == -1) 
+    {
+        printf("connect(): %s:%d: %s\n", host, port, strerror(errno));
+        exit(1);
+    }
+
+    /* Converte o file descriptor da conexão para uma stream. Fazemos essa
+     * conversão apenas para poder, na sequência, chamar as funções de stream,
+     * como fgets() e printf(). Poderíamos, no entanto, usar diretamente as
+     * funções equivalentes de file descriptors como read() e write(). */
+    stream = fdopen(sockfd, "r");
+
+    /* Lê uma linha do stream do socket, como se fosse um arquivo e imprime o
+     * conteúdo lido. */
+    buf = NULL;
+    readline(&buf, &bufsize, stream);
+    printf("%s", buf);
+    free(buf);
+    
+    /* Fecha a conexão. */
+    fclose(stream);
 }

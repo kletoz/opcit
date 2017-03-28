@@ -80,7 +80,7 @@ Operadores de arquivos
 Operadores de conexão
 ---------------------
 
-    [ server ]
+    [ server client ]
 
     Envio de operação a um servidor de execuções.
 
@@ -88,4 +88,9 @@ Operadores de conexão
     ~~~~~~~~~~~~~
 
     Inicia um servidor de execução na porta <port>.
+
+    client <host> <port>
+    ~~~~~~~~~~~~~~~~~~~~
+
+    Inicia a conexão na porta <port> do servidor <host>.
 
