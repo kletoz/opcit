@@ -76,3 +76,16 @@ Operadores de arquivos
     ~~~~~~~~~~~~~~~
 
     Conta o número de linhas do arquivo.
+
+Operadores de conexão
+---------------------
+
+    [ server ]
+
+    Envio de operação a um servidor de execuções.
+
+    server <port>
+    ~~~~~~~~~~~~~
+
+    Inicia um servidor de execução na porta <port>.
+

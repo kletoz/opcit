@@ -3,6 +3,11 @@
 #include <string.h>
 #include <errno.h>
 #include <pthread.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <unistd.h>
 #include "table.h"
 #include "util.h"
 #include "calc.h"
@@ -39,6 +44,8 @@ cmd_exec(char *cmd, char **params, int params_num)
         op_lines(params[0]);
     else if (strcmp(cmd, "pillow") == 0 && params_num == 1)
         op_pillow(params[0]);
+    else if (strcmp(cmd, "server") == 0 && params_num == 1)
+        op_server(params[0]);
     else
         retval = 1;
     
@@ -541,4 +548,109 @@ op_pillow(char *a)
     pthread_mutex_destroy(&pillow);
 
     free(threads);
+}
+
+/* Criação de um server simples que retorna o horário a cada nova conexão.
+ *
+ * A porta de conexão do server é passada como o parâmetro da função.
+ *
+ * Este é um tipo de implementação antigo, onde a estrutura de informação do
+ * endereço (struct sockaddr_in) é preenchida manualmente.
+ *
+ * As implementações mais novas usam a função getaddrinfo(). Esta função foi
+ * introduzida pela RFC 2553 em 1999. A função getaddrinfo() abstrai o
+ * tratamento de IPv4 e IPv6.
+ *
+ * A estrutura de info nesta implementação (struct sockaddr_in) funciona para
+ * IPv4. Para IPv6 deveríamos usar struct sockaddr_in6.
+ *
+ * Exite um texto muito bom explicando o funcionamento de sockets:
+ *
+ * Beej's Guide to Network Programming -- Using Internet Sockets
+ * http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html 
+ */
+void
+op_server(char *a)
+{
+    int port, len, listenfd, connfd;
+    struct sockaddr_in server;
+    time_t now;
+    char buf[1024];
+
+    /* Cria um socket com protocolo IPv4 (PF_INET) do tipo TCP (SOCK_STREAM). O
+     * último parâmetro define o `protocolo'; zero significa que o protocolo
+     * deve ser definido automaticamente a partir do tipo. Retorna um
+     * file descriptor, assim como open(). */  
+    listenfd = socket(PF_INET, SOCK_STREAM, 0);
+
+    if (listenfd == -1)
+    {
+        printf("socket(): %s: %s\n", a, strerror(errno));
+        exit(1);
+    }
+
+    port = atoi(a);
+
+    /* Inicia as variáveis de uma estrutura de informação de endereço de socket.
+     * Essa estrutura será usada pela função bind() para ligar o file
+     * descriptor do socket aberto ao endereço e porta configurado.
+     *
+     * O domínio do socket (family) é IPv4. Para o endereço (s_addr), estamos
+     * usando INADDR_ANY que significa que o IP de localhost será usado no bind.
+     *
+     * A porta é definida com o que o usuário informou por linha de comando.
+     *
+     * Estamos usando as funções htonl() e htons() que converte a representação
+     * de bytes do tipo da máquina (provavelmente little endian para o tipo de
+     * representação de rede, definido como big endian. */
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = htonl(INADDR_ANY);
+    server.sin_port = htons(port);
+
+    /* Faz a ligação do file descriptor do socket ao endereço IP. */
+    if (bind(listenfd, (struct sockaddr *) &server, sizeof(server)) == -1) 
+    {
+        printf("bind(): %s: %s\n", a, strerror(errno));
+        exit(1);
+    }
+
+    /* Aguarda conexões no socket. Até 10 pedidos de conexão ficam em fila
+     * aguardando. */
+    if (listen(listenfd, 10) == -1)
+    {
+        printf("listen(): %s: %s\n", a, strerror(errno));
+        exit(1);
+    }
+
+    /* Loop infinito de aceite de conexões. */
+    while (1)
+    {
+        /* Aguarda um novo pedido de conexão. A execução fica parada nesse ponto
+         * até que uma nova conexão seja feita na porta especificada.
+         *
+         * accept() retorna um novo file descriptor, que define o canal de
+         * comunicação exclusivo com a nova conexão estabelecido.
+         * 
+         * O file descriptor do socket original continua ouvindo novas conexões.
+         */
+        connfd = accept(listenfd, NULL, NULL);
+
+        if (connfd == -1)
+        {
+            printf("accept(): %s: %s\n", a, strerror(errno));
+            exit(1);
+        }
+
+        /* Cria uma string com o horário para ser enviado a conexão que acabou
+         * de ser formada em accept(). */
+        now = time(NULL);
+        len = snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&now));
+        
+        /* Escreve a string no file descriptor da conexão estabelecida. Reparem
+         * que o file descriptor usado é connfd e não listenfd. */
+        write(connfd, buf, len);
+
+        /* Fecha a conexão unilateralmente, derrubando a conexão. */
+        close(connfd);
+    }
 }
