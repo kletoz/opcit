@@ -14,4 +14,4 @@ void op_file(char *);
 void op_lines(char *);
 void op_pillow(char *);
 void op_server(char *);
-void op_client(char *, char *);
+void op_client(char *, char *, char *);

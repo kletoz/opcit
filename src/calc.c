@@ -47,8 +47,8 @@ cmd_exec(char *cmd, char **params, int params_num)
         op_pillow(params[0]);
     else if (strcmp(cmd, "server") == 0 && params_num == 1)
         op_server(params[0]);
-    else if (strcmp(cmd, "client") == 0 && params_num == 2)
-        op_client(params[0], params[1]);
+    else if (strcmp(cmd, "client") == 0 && params_num == 3)
+        op_client(params[0], params[1], params[2]);
     else
         retval = 1;
     
@@ -285,6 +285,17 @@ readline(char **buf, int *bufsize, FILE *file)
     }
 
     return slen;
+}
+
+void
+cmd_line_exec(char *line, int linelen)
+{
+    int params_num;
+    char **params;
+
+    params = params_split(line, linelen, " \t\n", &params_num);
+    cmd_exec(params[0], params + 1, params_num - 1);
+    params_destroy(params, params_num);
 }
 
 void *
@@ -582,25 +593,47 @@ pthread_cond_t server_condition;
 void *
 server_job(void *a)
 {
-    time_t now;
-    int len, connfd;
-    char buf[1024];
+    int buflen, connfd, bufsize;
+    char *buf;
+    FILE *stream;
 
     printf("server: client thread start\n");
     connfd = *((int *) a);
 
-    /* Cria uma string com o horário para ser enviado a conexão que acabou
-     * de ser formada em accept(). */
-    now = time(NULL);
-    len = snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&now));
+    /* Associa o file descriptor da conexão a uma stream do tipo FILE.
+     *
+     * Estamos usando isso apenas para reaproveitar todas as funções anteriores
+     * que já existiam e estão sempre lidando com streams. Para sockets, no
+     * entando, é mais comum usar as funções de nível mais baixo da bibliteca
+     * padrão de I/O, que são read() e write(). */
+    stream = fdopen(connfd, "a+");
 
-    /* Escreve a string no file descriptor da conexão estabelecida. Reparem
-     * que o file descriptor usado é connfd e não listenfd. */
-    write(connfd, buf, len);
-    printf("server: %s", buf);
+    /* Lê uma linha do socket, como se fosse um arquivo. Estamos exigindo dessa
+     * forma que o client envie uma quebra de linha no final da operação. */
+    buf = NULL;
+
+    while ((buflen = readline(&buf, &bufsize, stream)))
+    {
+        if (buflen == 0)
+            continue;
+
+        printf("client:[%s]\n", buf);
+    
+        /* Executa a linha enviada pelo cliente. */
+        cmd_line_exec(buf, buflen);
+    }
+
+    /* Libera o espeço alocado em readline() e verifica se há erro no stream. */
+    free(buf);
+   
+    if (ferror(stream))
+    {
+        printf("socket(): %s\n", strerror(errno));
+        exit(1);
+    }
 
     /* Fecha a conexão unilateralmente, derrubando a conexão. */
-    close(connfd);
+    fclose(stream);
     
     /* Libera a área de memória que foi passada para esta função, mas alocada na
      * função princial, que cria a thread op_server(). */
@@ -789,12 +822,11 @@ op_server(char *a)
 }
 
 void
-op_client(char *host, char *b)
+op_client(char *host, char *b, char *op)
 {
-    int port, sockfd, bufsize;
+    int port, sockfd;
     struct sockaddr_in server;
     FILE *stream;
-    char *buf;
 
     port = atoi(b);
     
@@ -843,16 +875,16 @@ op_client(char *host, char *b)
     /* Converte o file descriptor da conexão para uma stream. Fazemos essa
      * conversão apenas para poder, na sequência, chamar as funções de stream,
      * como fgets() e printf(). Poderíamos, no entanto, usar diretamente as
-     * funções equivalentes de file descriptors como read() e write(). */
-    stream = fdopen(sockfd, "r");
+     * funções equivalentes de file descriptors como read() e write(). A stream
+     * associada tem o mode "ra+", que significa que pode ser lida e apendada.
+     */
+    stream = fdopen(sockfd, "a+");
 
-    /* Lê uma linha do stream do socket, como se fosse um arquivo e imprime o
-     * conteúdo lido. */
-    buf = NULL;
-    readline(&buf, &bufsize, stream);
-    printf("%s", buf);
-    free(buf);
-    
+    /* Escreve a operação lida na linha de comando para a stream, ou seja, envia
+     * ao servidor. */
+    fprintf(stream, "%s\n", op);
+    fflush(stream);
+
     /* Fecha a conexão. */
     fclose(stream);
 }
