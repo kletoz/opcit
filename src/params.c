@@ -85,6 +85,9 @@ params_destroy(char **params, int params_num)
 {
     for (params_num--; params_num >= 0; params_num--)
         free(params[params_num]);
+
+    free(params);
+    params = NULL;
 }
 
 

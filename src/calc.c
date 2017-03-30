@@ -214,6 +214,9 @@ op_vector(char *a, char *b, void (*op) (int *, int *, int))
 
     op(x, y, n1);
 
+    free(x);
+    free(y);
+
     printf("\n"); 
 }
 
@@ -400,6 +403,8 @@ op_file(char *filename)
     /* Aguardar todas as threads para continuar a execução. */
     for (k = 0; k < threads_index; k++)
         pthread_join(threads[k], NULL);
+
+    free(threads);
 }
 
 void
