@@ -589,10 +589,11 @@ op_pillow(char *a)
 void
 op_server(char *a)
 {
-    int port, listenfd, connfd, optval;
     struct sockaddr_in server;
     time_t now;
     char buf[1024];
+    struct sockaddr_in server, client;
+    socklen_t clientlen;
 
     /* Cria um socket com protocolo IPv4 (PF_INET) do tipo TCP (SOCK_STREAM). O
      * último parâmetro define o `protocolo'; zero significa que o protocolo
@@ -659,7 +660,8 @@ op_server(char *a)
          * 
          * O file descriptor do socket original continua ouvindo novas conexões.
          */
-        connfd = accept(listenfd, NULL, NULL);
+        clientlen = 0;
+        connfd = accept(listenfd, (struct sockaddr *) &client, &clientlen);
 
         if (connfd == -1)
         {
@@ -675,7 +677,9 @@ op_server(char *a)
         /* Escreve a string no file descriptor da conexão estabelecida. Reparem
          * que o file descriptor usado é connfd e não listenfd. */
         write(connfd, buf, len);
-        printf("client %d: %s", connfd, buf);
+
+        printf("server: connect from %s:%d\n", inet_ntoa(client.sin_addr),
+               (unsigned short) ntohs(client.sin_port));
 
         /* Fecha a conexão unilateralmente, derrubando a conexão. */
         close(connfd);
@@ -685,9 +689,8 @@ op_server(char *a)
 void
 op_client(char *host, char *b)
 {
-    int port, len, sockfd, bufsize;
+    int port, sockfd, bufsize;
     struct sockaddr_in server;
-    time_t now;
     FILE *stream;
     char *buf;
 
