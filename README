@@ -93,6 +93,6 @@ Operadores de conexão
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     Inicia a conexão na porta <port> do servidor <host> e envia a operação <op>
-    com os argumentos <args> para ser executado no servidor. Por exemplo:
+    com os argumentos <args> para ser executado pelo servidor. Por exemplo:
 
     ./opcit client localhost 42000 "add 1 2"

@@ -34,7 +34,7 @@ main(int argc, char *argv[])
         params_in_argv = 1;
     }
 
-    if (cmd_exec(argv[1], params, params_num))
+    if (cmd_exec(stdout, argv[1], params, params_num))
         usage(argv[1]);
   
     if (!params_in_argv)

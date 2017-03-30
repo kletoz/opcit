@@ -439,7 +439,7 @@ table_load(char *filename)
 }
 
 static void
-table_regex_search(char *token, struct contacts *contacts, int contacts_num)
+table_regex_search(FILE *file, char *token, struct contacts *contacts, int contacts_num)
 {
     int i, retval, name, email;
     size_t errbuf_size;
@@ -464,14 +464,14 @@ table_regex_search(char *token, struct contacts *contacts, int contacts_num)
         email = regexec(&preg, contacts[i].email, 0, NULL, 0);
 
         if (name == 0 || email == 0)
-            printf("%-50s | %-50s\n", contacts[i].name, contacts[i].email);
+            fprintf(file, "%-50s | %-50s\n", contacts[i].name, contacts[i].email);
     }
 
     regfree(&preg);
 }
 
 void
-table_search(char *token)
+table_search(FILE *file, char *token)
 {
     int i, k, sem;
     void *shm;
@@ -509,9 +509,9 @@ table_search(char *token)
      * memory). Imprimimos cada registro que não for vazio. */
     if (strcmp(token, "all") == 0)
         for (i = 0; i < k; i++)
-            printf("%-50s | %-50s\n", contacts[i].name, contacts[i].email);
+            fprintf(file, "%-50s | %-50s\n", contacts[i].name, contacts[i].email);
     else
-        table_regex_search(token, contacts, k);
+        table_regex_search(file, token, contacts, k);
     
     table_read_unlock(sem);
 }

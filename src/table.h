@@ -1,3 +1,4 @@
+#include <stdio.h>
 
 extern void table_load(char *);
-extern void table_search(char *);
+extern void table_search(FILE *, char *);

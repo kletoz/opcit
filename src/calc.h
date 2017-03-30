@@ -1,17 +1,1 @@
-int cmd_exec(char *, char **, int);
-void version(void);
-void op_add(char *, char *);
-void op_sub(char *, char *);
-void op_div(char *, char *);
-void op_mul(char *, char *);
-void op_fibo(char *);
-void op_addv(char *, char *);
-void op_subv(char *, char *);
-void op_mulv(char *, char *);
-void op_load(char *);
-void op_search(char *);
-void op_file(char *);
-void op_lines(char *);
-void op_pillow(char *);
-void op_server(char *);
-void op_client(char *, char *, char *);
+int cmd_exec(FILE *, char *, char **, int);

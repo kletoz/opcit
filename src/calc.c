@@ -14,73 +14,32 @@
 #include "calc.h"
 #include "params.h"
 
-int
-cmd_exec(char *cmd, char **params, int params_num)
+void
+version(FILE *file)
 {
-    int retval = 0;
-
-    if (strcmp(cmd, "add") == 0 && params_num == 2)
-        op_add(params[0], params[1]);
-    else if (strcmp(cmd, "sub") == 0 && params_num == 2)
-        op_sub(params[0], params[1]);
-    else if (strcmp(cmd, "div") == 0 && params_num == 2)
-        op_div(params[0], params[1]);
-    else if (strcmp(cmd, "mul") == 0 && params_num == 2)
-        op_mul(params[0], params[1]);
-    else if (strcmp(cmd, "fibo") == 0 && params_num == 1)
-        op_fibo(params[0]);
-    else if (strcmp(cmd, "addv") == 0 && params_num == 2)
-        op_addv(params[0], params[1]);
-    else if (strcmp(cmd, "subv") == 0 && params_num == 2)
-        op_subv(params[0], params[1]);
-    else if (strcmp(cmd, "mulv") == 0 && params_num == 2)
-        op_mulv(params[0], params[1]);
-    else if (strcmp(cmd, "load") == 0 && params_num == 1)
-        op_load(params[0]);
-    else if (strcmp(cmd, "search") == 0 && params_num == 1)
-        op_search(params[0]);
-    else if (strcmp(cmd, "file") == 0 && params_num == 1)
-        op_file(params[0]);
-    else if (strcmp(cmd, "lines") == 0 && params_num == 1)
-        op_lines(params[0]);
-    else if (strcmp(cmd, "pillow") == 0 && params_num == 1)
-        op_pillow(params[0]);
-    else if (strcmp(cmd, "server") == 0 && params_num == 1)
-        op_server(params[0]);
-    else if (strcmp(cmd, "client") == 0 && params_num == 3)
-        op_client(params[0], params[1], params[2]);
-    else
-        retval = 1;
-    
-    return retval;
+    fprintf(file, "calc v1.0\n");
 }
 
 void
-version(void)
-{
-    printf("calc v1.0\n");
-}
-
-void
-op_add(char *a, char *b)
+op_add(FILE *file, char *a, char *b)
 {
     int x = atoi(a);
     int y = atoi(b);
 
-    printf("%d\n", x + y);
+    fprintf(file, "%d\n", x + y);
 }
 
 void
-op_sub(char *a, char *b)
+op_sub(FILE *file, char *a, char *b)
 {
     int x = atoi(a);
     int y = atoi(b);
 
-    printf("%d\n", x - y);
+    fprintf(file, "%d\n", x - y);
 }
 
 void
-op_div(char *a, char *b)
+op_div(FILE *file, char *a, char *b)
 {
     int x = atoi(a);
     int y = atoi(b);
@@ -89,83 +48,83 @@ op_div(char *a, char *b)
 }
 
 void
-op_mul(char *a, char *b)
+op_mul(FILE *file, char *a, char *b)
 {
     int x = atoi(a);
     int y = atoi(b);
 
-    printf("%d\n", x * y);
+    fprintf(file, "%d\n", x * y);
 }
 
 void
-fibonacci(int x)
+fibonacci(FILE *file, int x)
 {
     int i = 0, j = 1;
 
-    printf("%d %d ", i, j);
+    fprintf(file, "%d %d ", i, j);
 
-    flockfile(stdout);
+    flockfile(file);
 
     for (; x > 2; x--)
     {
         int t = i + j;
         i = j;
         j = t;
-        printf("%d ", t);
+        fprintf(file, "%d ", t);
     }
         
-    printf("\n");
-    funlockfile(stdout);
+    fprintf(file, "\n");
+    funlockfile(file);
 }
 
 void
-op_fibo(char *a)
+op_fibo(FILE *file, char *a)
 {
     int x = atoi(a);
 
     if (x > 0)
-        fibonacci(x);
+        fibonacci(file, x);
 }
 
 void
-op_vector_add(int *x, int *y, int n)
+op_vector_add(FILE *file, int *x, int *y, int n)
 {
     int i;
 
-    flockfile(stdout);
+    flockfile(file);
     
     for (i = 0; i <= n; i++)
-        printf("%d ", x[i] + y[i]);
+        fprintf(file, "%d ", x[i] + y[i]);
     
-    funlockfile(stdout);
+    funlockfile(file);
 }
 
 void
-op_vector_sub(int *x, int *y, int n)
+op_vector_sub(FILE *file, int *x, int *y, int n)
 {
     int i;
 
-    flockfile(stdout);
+    flockfile(file);
     
     for (i = 0; i <= n; i++)
-        printf("%d ", x[i] - y[i]);
+        fprintf(file, "%d ", x[i] - y[i]);
     
-    funlockfile(stdout);
+    funlockfile(file);
 }
 
 void
-op_vector_mul(int *x, int *y, int n)
+op_vector_mul(FILE *file, int *x, int *y, int n)
 {
     int i, a = 0;
 
     for (i = 0; i <= n; i++)
         a += x[i] * y[i];
         
-    printf("%d ", a);
+    fprintf(file, "%d ", a);
 }
 
 void
-op_vector(char *a, char *b, void (*op) (int *, int *, int))
+op_vector(FILE *file, char *a, char *b, void (*op) (FILE *, int *, int *, int))
 {
     int i, n1, n2, len, *x, *y;
     char *str1, *str2, *token, *saveptr;
@@ -213,7 +172,7 @@ op_vector(char *a, char *b, void (*op) (int *, int *, int))
         y[i] = atoi(token);
     }
 
-    op(x, y, n1);
+    op(file, x, y, n1);
 
     free(x);
     free(y);
@@ -222,21 +181,21 @@ op_vector(char *a, char *b, void (*op) (int *, int *, int))
 }
 
 void
-op_addv(char *a, char *b)
+op_addv(FILE *file, char *a, char *b)
 {
-    op_vector(a, b, op_vector_add);
+    op_vector(file, a, b, op_vector_add);
 }
 
 void
-op_subv(char *a, char *b)
+op_subv(FILE *file, char *a, char *b)
 {
-    op_vector(a, b, op_vector_sub);
+    op_vector(file, a, b, op_vector_sub);
 }
 
 void
-op_mulv(char *a, char *b)
+op_mulv(FILE *file, char *a, char *b)
 {
-    op_vector(a, b, op_vector_mul);
+    op_vector(file, a, b, op_vector_mul);
 }
 
 void
@@ -246,9 +205,9 @@ op_load(char *filename)
 }
 
 void
-op_search(char *token)
+op_search(FILE *file, char *token)
 {
-    table_search(token);
+    table_search(file, token);
 }
 
 int
@@ -287,15 +246,17 @@ readline(char **buf, int *bufsize, FILE *file)
     return slen;
 }
 
-void
-cmd_line_exec(char *line, int linelen)
+int
+cmd_line_exec(char *line, int linelen, FILE *stream)
 {
-    int params_num;
+    int r, params_num;
     char **params;
 
     params = params_split(line, linelen, " \t\n", &params_num);
-    cmd_exec(params[0], params + 1, params_num - 1);
+    r = cmd_exec(stream, params[0], params + 1, params_num - 1);
     params_destroy(params, params_num);
+
+    return r;
 }
 
 void *
@@ -311,7 +272,7 @@ job_cmd_exec(void *p)
         
     params = params_split(buf, len, " \t\n", &params_num);
 
-    cmd_exec(params[0], params + 1, params_num - 1);
+    cmd_exec(stdout, params[0], params + 1, params_num - 1);
         
     params_destroy(params, params_num);
 
@@ -620,7 +581,10 @@ server_job(void *a)
         printf("client:[%s]\n", buf);
     
         /* Executa a linha enviada pelo cliente. */
-        cmd_line_exec(buf, buflen);
+        if (cmd_line_exec(buf, buflen, stream))
+            fprintf(stream, "invalid command");
+
+        fputc('\n', stream);
     }
 
     /* Libera o espeço alocado em readline() e verifica se há erro no stream. */
@@ -631,6 +595,8 @@ server_job(void *a)
         printf("socket(): %s\n", strerror(errno));
         exit(1);
     }
+
+    fflush(stream);
 
     /* Fecha a conexão unilateralmente, derrubando a conexão. */
     fclose(stream);
@@ -824,9 +790,10 @@ op_server(char *a)
 void
 op_client(char *host, char *b, char *op)
 {
-    int port, sockfd;
+    int port, sockfd, buflen, bufsize;
     struct sockaddr_in server;
     FILE *stream;
+    char *buf;
 
     port = atoi(b);
     
@@ -885,6 +852,62 @@ op_client(char *host, char *b, char *op)
     fprintf(stream, "%s\n", op);
     fflush(stream);
 
+    buf = NULL;
+
+    buflen = readline(&buf, &bufsize, stream);
+    
+    if (buflen != 0)
+        printf("%s", buf);
+
+    free(buf);
+
+    if (ferror(stream))
+    {
+        printf("%s\n", strerror(errno));
+        exit(1);
+    }
+
     /* Fecha a conexão. */
     fclose(stream);
+}
+
+int
+cmd_exec(FILE *file, char *cmd, char **params, int params_num)
+{
+    int retval = 0;
+
+    if (strcmp(cmd, "add") == 0 && params_num == 2)
+        op_add(file, params[0], params[1]);
+    else if (strcmp(cmd, "sub") == 0 && params_num == 2)
+        op_sub(file, params[0], params[1]);
+    else if (strcmp(cmd, "div") == 0 && params_num == 2)
+        op_div(file, params[0], params[1]);
+    else if (strcmp(cmd, "mul") == 0 && params_num == 2)
+        op_mul(file, params[0], params[1]);
+    else if (strcmp(cmd, "fibo") == 0 && params_num == 1)
+        op_fibo(file, params[0]);
+    else if (strcmp(cmd, "addv") == 0 && params_num == 2)
+        op_addv(file, params[0], params[1]);
+    else if (strcmp(cmd, "subv") == 0 && params_num == 2)
+        op_subv(file, params[0], params[1]);
+    else if (strcmp(cmd, "mulv") == 0 && params_num == 2)
+        op_mulv(file, params[0], params[1]);
+    else if (strcmp(cmd, "load") == 0 && params_num == 1)
+        op_load(params[0]);
+    else if (strcmp(cmd, "search") == 0 && params_num == 1)
+        op_search(file, params[0]);
+    else if (strcmp(cmd, "file") == 0 && params_num == 1)
+        op_file(params[0]);
+    else if (strcmp(cmd, "lines") == 0 && params_num == 1)
+        op_lines(params[0]);
+    else if (strcmp(cmd, "pillow") == 0 && params_num == 1)
+        op_pillow(params[0]);
+    else if (strcmp(cmd, "server") == 0 && params_num == 1)
+        op_server(params[0]);
+    else if (strcmp(cmd, "client") == 0 && params_num == 3)
+        op_client(params[0], params[1], params[2]);
+    else
+        retval = 1;
+    
+    return retval;
 }
