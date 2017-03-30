@@ -157,7 +157,7 @@ void
 op_vector(char *a, char *b, void (*op) (int *, int *, int))
 {
     int i, n1, n2, len, *x, *y;
-    char *str1, *str2, *token;
+    char *str1, *str2, *token, *saveptr;
 
     str1 = a;
     len = strlen(str1);
@@ -184,7 +184,7 @@ op_vector(char *a, char *b, void (*op) (int *, int *, int))
 
     for (i = 0, str1 = a; /* nothing */; i++, str1 = NULL)
     {
-        token = strtok(str1, ",");
+        token = strtok_r(str1, ",", &saveptr);
         
         if (token == NULL)
             break;
@@ -194,7 +194,7 @@ op_vector(char *a, char *b, void (*op) (int *, int *, int))
 
     for (i = 0, str2 = b; /* nothing */; i++, str2 = NULL)
     {
-        token = strtok(str2, ",");
+        token = strtok_r(str2, ",", &saveptr);
         
         if (token == NULL)
             break;

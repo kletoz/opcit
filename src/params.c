@@ -6,13 +6,13 @@
 char **
 params_split(char *text, int text_len, char *delim, int *params_num)
 {
-    char *s, *token, *copy, **params;
+    char *s, *token, *copy, **params, *saveptr;
     int len, n;
     struct list *list = NULL, *node;
 
     for (s = text, n = 0; /* nothing */; s = NULL)
     {
-        token = strtok(s, delim);
+        token = strtok_r(s, delim, &saveptr);
 
         if (token == NULL)
             break;
