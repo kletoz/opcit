@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include "table.h"
 #include "util.h"
 #include "calc.h"
@@ -567,6 +568,60 @@ op_pillow(char *a)
     free(threads);
 }
 
+/* Variável para controle do número de clientes conectados. Como cada cliente
+ * pode alterar essa variável, além do loop principal, precisamos controlar o
+ * seu acesso usando um mutex.
+ *
+ * Vamos usar também um variável de condição para sinalizar para a thread
+ * principal (que cria os jobs) que cada thread chegou ao final. */ 
+int server_clients_num;
+pthread_mutex_t server_mutex;
+pthread_cond_t server_condition;
+
+/* Função executada por cada cliente. O servidor cria uma thread por cliente. */
+void *
+server_job(void *a)
+{
+    time_t now;
+    int len, connfd;
+    char buf[1024];
+
+    printf("server: client thread start\n");
+    connfd = *((int *) a);
+
+    /* Cria uma string com o horário para ser enviado a conexão que acabou
+     * de ser formada em accept(). */
+    now = time(NULL);
+    len = snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&now));
+
+    /* Escreve a string no file descriptor da conexão estabelecida. Reparem
+     * que o file descriptor usado é connfd e não listenfd. */
+    write(connfd, buf, len);
+    printf("server: %s", buf);
+
+    /* Fecha a conexão unilateralmente, derrubando a conexão. */
+    close(connfd);
+    
+    /* Libera a área de memória que foi passada para esta função, mas alocada na
+     * função princial, que cria a thread op_server(). */
+    free(a);
+
+    printf("server: client thread finish\n");
+
+    /* Diminui o número de clientes conectados no servidor, já que o cliente
+     * dessa thread chegou ao fim. Depois, emite um sinal para a thread
+     * principal (a única esperando).
+     *
+     * A thread principal quando recebe este sinal, pode verificar o número de
+     * clientes ainda conectados. */
+    pthread_mutex_lock(&server_mutex);
+    server_clients_num--;
+    pthread_cond_signal(&server_condition);
+    pthread_mutex_unlock(&server_mutex);
+
+    return 0;
+}
+
 /* Criação de um server simples que retorna o horário a cada nova conexão.
  *
  * A porta de conexão do server é passada como o parâmetro da função.
@@ -589,11 +644,24 @@ op_pillow(char *a)
 void
 op_server(char *a)
 {
-    struct sockaddr_in server;
-    time_t now;
-    char buf[1024];
+    int *p, port, listenfd, connfd, optval, clients;
     struct sockaddr_in server, client;
     socklen_t clientlen;
+    pthread_attr_t threadattr;
+    pthread_t thread;
+
+    /* Define um conjunto de atributos para thread do tipo DETACHED. Esse tipo
+     * de thread não pode não será devolvido a quem chamou (essa função
+     * op_server). Isto é, não é possível usar pthread_join() para thread
+     * DETACHED. */
+    pthread_attr_init(&threadattr);
+    pthread_attr_setdetachstate(&threadattr, PTHREAD_CREATE_DETACHED);
+
+    /* Definição (ou inicialização) da variável com o núemero de clientes
+     * conectados e também das variáveis de controle mutex e cond. */ 
+    server_clients_num = 0;
+    pthread_mutex_init(&server_mutex, NULL);
+    pthread_cond_init(&server_condition, NULL);
 
     /* Cria um socket com protocolo IPv4 (PF_INET) do tipo TCP (SOCK_STREAM). O
      * último parâmetro define o `protocolo'; zero significa que o protocolo
@@ -649,6 +717,8 @@ op_server(char *a)
         exit(1);
     }
 
+    clients = 1;
+
     /* Loop infinito de aceite de conexões. */
     while (1)
     {
@@ -669,21 +739,53 @@ op_server(char *a)
             exit(1);
         }
 
-        /* Cria uma string com o horário para ser enviado a conexão que acabou
-         * de ser formada em accept(). */
-        now = time(NULL);
-        len = snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&now));
-        
-        /* Escreve a string no file descriptor da conexão estabelecida. Reparem
-         * que o file descriptor usado é connfd e não listenfd. */
-        write(connfd, buf, len);
-
         printf("server: connect from %s:%d\n", inet_ntoa(client.sin_addr),
                (unsigned short) ntohs(client.sin_port));
 
-        /* Fecha a conexão unilateralmente, derrubando a conexão. */
-        close(connfd);
+        p = malloc(sizeof(*p));
+        *p = connfd;
+
+        /* Controle do número de clientes conectados. */
+        pthread_mutex_lock(&server_mutex);
+        server_clients_num++;
+        pthread_mutex_unlock(&server_mutex);
+
+        /* Criação de uma thread com os atributos `threadattr' (que é DETACHED)
+         * executando a função server_job e recebendo o ponteiro `p'. Este
+         * ponteiro foi alocado aqui e deve ser liberado na função server_job.
+         * Não liberar este ponteiro é uma forma de aumentar o consumo de
+         * memória indefinidamente num server. */
+        pthread_create(&thread, &threadattr, server_job, p); 
+   
+        /* Interrompe o servidor para um certo número de clientes. Usado apenas
+         * para teste. Repare qua a variável usada `clients' não é a mesma
+         * server_clients_num, para evitar mais um lock da variável. */
+        if (clients++ > 2)
+            break;
     }
+
+    /* Fecha o socket de conexão. O fechamento deste socket não influencia os
+     * clientes já conectados -- accept() retorna um fd para cada novo cliente.
+     * Apenas novos clientes que tentarem se conectar serão impactados. */    
+    close(listenfd);
+
+    /* Aguarda o fim da execução das threads para cada cliente. Como as threads
+     * são DETACHED, não podemo usar pthread_join(). Mas também não podemos
+     * simplesmente sair desta função, pois isso retorna imeditamente para
+     * main() e termina a execução da thread principal. Se isso acontecer, as
+     * threads que ainda estiverem eventualmente execução serão interrompidas
+     * imediatamente -- como um kill. */
+    pthread_mutex_lock(&server_mutex);
+
+    while (server_clients_num > 0)
+        pthread_cond_wait(&server_condition, &server_mutex);
+    
+    pthread_mutex_unlock(&server_mutex);
+
+    /* Libera a memória criada para as variáves de sincronização. */
+    pthread_mutex_destroy(&server_mutex);
+    pthread_cond_destroy(&server_condition);
+    pthread_attr_destroy(&threadattr);
 }
 
 void
@@ -694,6 +796,8 @@ op_client(char *host, char *b)
     FILE *stream;
     char *buf;
 
+    port = atoi(b);
+    
     /* Cria o socket. */
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -702,8 +806,6 @@ op_client(char *host, char *b)
         printf("socket(): %s:%d: %s\n", host, port, strerror(errno));
         exit(1);
     }
-
-    port = atoi(b);
 
     /* Inicia a estrutura de informações com o domínio AF_INET (que é IPv4) e a
      * porta. Todos os outros elementos da estrutura devem ser 0 ou NULL (em
