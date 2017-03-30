@@ -589,7 +589,7 @@ op_pillow(char *a)
 void
 op_server(char *a)
 {
-    int port, len, listenfd, connfd;
+    int port, listenfd, connfd, optval;
     struct sockaddr_in server;
     time_t now;
     char buf[1024];
@@ -605,6 +605,15 @@ op_server(char *a)
         printf("socket(): %s: %s\n", a, strerror(errno));
         exit(1);
     }
+
+    optval = 1;
+
+    if (setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,
+                   &optval, sizeof(optval)) == -1)
+    {
+        printf("setockopt(): SO_REUSEADDR: %s: %s\n", a, strerror(errno));
+        exit(1);
+    } 
 
     port = atoi(a);
 
