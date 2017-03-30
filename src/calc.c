@@ -103,6 +103,8 @@ fibonacci(int x)
 
     printf("%d %d ", i, j);
 
+    flockfile(stdout);
+
     for (; x > 2; x--)
     {
         int t = i + j;
@@ -110,6 +112,9 @@ fibonacci(int x)
         j = t;
         printf("%d ", t);
     }
+        
+    printf("\n");
+    funlockfile(stdout);
 }
 
 void
@@ -118,10 +123,7 @@ op_fibo(char *a)
     int x = atoi(a);
 
     if (x > 0)
-    {
         fibonacci(x);
-        printf("\n");
-    }
 }
 
 void
@@ -129,8 +131,12 @@ op_vector_add(int *x, int *y, int n)
 {
     int i;
 
+    flockfile(stdout);
+    
     for (i = 0; i <= n; i++)
         printf("%d ", x[i] + y[i]);
+    
+    funlockfile(stdout);
 }
 
 void
@@ -138,8 +144,12 @@ op_vector_sub(int *x, int *y, int n)
 {
     int i;
 
+    flockfile(stdout);
+    
     for (i = 0; i <= n; i++)
         printf("%d ", x[i] - y[i]);
+    
+    funlockfile(stdout);
 }
 
 void
