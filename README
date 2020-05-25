@@ -32,7 +32,7 @@ Operadores matemáticos
     [ fibo ]
 
     Imprime a sequência de Fibonacci até o n-ésimo elemento. Aceita um
-    argumento, que é o números de elementos. 
+    argumento, que é o número de elementos. 
 
 Operadores de shared memory
 ---------------------------
@@ -82,7 +82,7 @@ Operadores de conexão
 
     [ server client ]
 
-    Envio de operação a um servidor de execuções.
+    Envio de operação a um servidor de execução.
 
     server <port>
     ~~~~~~~~~~~~~
